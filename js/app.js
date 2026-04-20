@@ -2,6 +2,16 @@
    LAPOR BENCANA — app.js
    ═══════════════════════════════════════════ */
 
+/* ── Service Worker Registration ── */
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker
+      .register('/js/sw.js')
+      .then((reg) => console.info('[PWA] Service Worker registered:', reg.scope))
+      .catch((err) => console.warn('[PWA] Service Worker registration failed:', err));
+  });
+}
+
 /* ── Config: Supabase ── */
 const SUPABASE_URL  = 'https://lfjajcxotlypisupiedi.supabase.co';
 const SUPABASE_ANON = 'sb_publishable_1bSLL_4J0acZA19IwYYnLw_q8DX0c5b';
