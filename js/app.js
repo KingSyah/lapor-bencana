@@ -301,20 +301,156 @@ async function cleanupExpiredReports() {
 }
 
 /* ═══════════════════════════════════════════
-   FORM — Validation & Submission
+   ANTI-SPAM
    ═══════════════════════════════════════════ */
+const SPAM = {
+  cooldownSec:    60,      // detik antar submit
+  maxPerHour:     5,       // maks submit per jam
+  minDescLength:  20,      // karakter minimum deskripsi
+  storageKey:     'laporbencana_lastSubmit',
+  historyKey:     'laporbencana_submitHistory',
+};
+
+/** Check if user is in cooldown period */
+function isCooldown() {
+  const last = parseInt(localStorage.getItem(SPAM.storageKey) || '0', 10);
+  const elapsed = (Date.now() - last) / 1000;
+  return elapsed < SPAM.cooldownSec ? Math.ceil(SPAM.cooldownSec - elapsed) : 0;
+}
+
+/** Get remaining submissions allowed this hour */
+function getRemainingSubmissions() {
+  const history = JSON.parse(localStorage.getItem(SPAM.historyKey) || '[]');
+  const oneHourAgo = Date.now() - 3600000;
+  const recent = history.filter((t) => t > oneHourAgo);
+  // Clean old entries
+  localStorage.setItem(SPAM.historyKey, JSON.stringify(recent));
+  return SPAM.maxPerHour - recent.length;
+}
+
+/** Record a submission timestamp */
+function recordSubmission() {
+  localStorage.setItem(SPAM.storageKey, String(Date.now()));
+  const history = JSON.parse(localStorage.getItem(SPAM.historyKey) || '[]');
+  history.push(Date.now());
+  localStorage.setItem(SPAM.historyKey, JSON.stringify(history));
+}
+
+/** Simple hash for duplicate detection */
+function simpleHash(str) {
+  let h = 0;
+  for (let i = 0; i < str.length; i++) {
+    h = ((h << 5) - h + str.charCodeAt(i)) | 0;
+  }
+  return h;
+}
+
+/** Check if current form is duplicate of last submission */
+function isDuplicate(nama, jenis, deskripsi, lat, lng) {
+  const lastHash = localStorage.getItem('laporbencana_lastHash');
+  const current  = simpleHash(`${nama}|${jenis}|${deskripsi}|${lat.toFixed(4)}|${lng.toFixed(4)}`).toString();
+  return lastHash === current;
+}
+
+function saveHash(nama, jenis, deskripsi, lat, lng) {
+  const h = simpleHash(`${nama}|${jenis}|${deskripsi}|${lat.toFixed(4)}|${lng.toFixed(4)}`).toString();
+  localStorage.setItem('laporbencana_lastHash', h);
+}
+
+/** Show cooldown overlay with countdown */
+function showCooldown(seconds) {
+  const overlay = document.getElementById('cooldownOverlay');
+  const label   = document.getElementById('cooldownLabel');
+  const circle  = document.getElementById('cooldownCircle');
+
+  const circumference = 2 * Math.PI * 35;
+  circle.style.strokeDasharray  = circumference;
+  circle.style.strokeDashoffset = circumference;
+
+  overlay.classList.add('show');
+  let remaining = seconds;
+
+  const tick = () => {
+    label.textContent = remaining;
+    const progress = 1 - (remaining / seconds);
+    circle.style.strokeDashoffset = circumference * (1 - progress);
+
+    if (remaining <= 0) {
+      overlay.classList.remove('show');
+      return;
+    }
+    remaining--;
+    setTimeout(tick, 1000);
+  };
+  tick();
+}
+
+/* ── Character Counter ── */
+function setupCharCounter() {
+  const textarea = document.getElementById('deskripsi');
+  const counter  = document.getElementById('charCounter');
+  const hint     = document.getElementById('charHint');
+
+  textarea.addEventListener('input', () => {
+    const len = textarea.value.trim().length;
+    counter.textContent = `${len} / ${SPAM.minDescLength}`;
+
+    if (len >= SPAM.minDescLength) {
+      counter.className = 'char-counter ok';
+      hint.className    = 'char-hint ok';
+    } else if (len > 0) {
+      counter.className = 'char-counter warn';
+      hint.className    = 'char-hint warn';
+    } else {
+      counter.className = 'char-counter';
+      hint.className    = 'char-hint';
+    }
+  });
+}
 async function submitReport() {
   const nama      = document.getElementById('nama').value.trim();
   const jenis     = document.getElementById('jenis').value;
   const deskripsi = document.getElementById('deskripsi').value.trim();
   const { lat, lng } = getCoords();
 
+  // ── Anti-Spam: Honeypot ──
+  if (document.getElementById('hp_website').value) {
+    console.warn('[LaporBencana] Honeypot triggered — bot detected.');
+    showToast('✅', 'Laporan Terkirim!', 'Terima kasih atas laporan Anda.');
+    return;
+  }
+
+  // ── Anti-Spam: Cooldown ──
+  const cooldownLeft = isCooldown();
+  if (cooldownLeft > 0) {
+    showCooldown(cooldownLeft);
+    return;
+  }
+
+  // ── Anti-Spam: Rate Limit ──
+  const remaining = getRemainingSubmissions();
+  if (remaining <= 0) {
+    showToast('⏳', 'Batas Tercapai', `Maksimal ${SPAM.maxPerHour} laporan per jam. Coba lagi nanti.`);
+    return;
+  }
+
+  // ── Validate fields ──
   if (!nama || !jenis || !deskripsi) {
     showToast('⚠️', 'Data Belum Lengkap', 'Harap isi semua kolom yang diperlukan.');
     return;
   }
+  if (deskripsi.length < SPAM.minDescLength) {
+    showToast('📝', 'Deskripsi Terlalu Pendek', `Minimal ${SPAM.minDescLength} karakter untuk menjelaskan keadaan.`);
+    return;
+  }
   if (!telegramToken || !telegramChatId) {
     showToast('❌', 'Konfigurasi Hilang', 'Token Telegram belum termuat. Coba refresh halaman.');
+    return;
+  }
+
+  // ── Anti-Spam: Duplicate ──
+  if (isDuplicate(nama, jenis, deskripsi, lat, lng)) {
+    showToast('🔄', 'Laporan Duplikat', 'Laporan yang sama sudah pernah dikirim.');
     return;
   }
 
@@ -368,7 +504,9 @@ async function submitReport() {
     await saveReportToSupabase(nama, jenis, deskripsi, lat, lng);
 
     success = true;
-    showToast('✅', 'Laporan Terkirim!', 'Petugas akan segera menindaklanjuti laporan Anda.');
+    recordSubmission();
+    saveHash(nama, jenis, deskripsi, lat, lng);
+    showToast('✅', 'Laporan Terkirim!', `Petugas akan segera menindaklanjuti. (Tersisa ${getRemainingSubmissions()} laporan/jam)`);
     resetForm();
 
     // 3. Refresh reports list
@@ -435,4 +573,7 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('toastOverlay').addEventListener('click', (e) => {
     if (e.target === e.currentTarget) closeToast();
   });
+
+  // Character counter for description
+  setupCharCounter();
 });
