@@ -18,4 +18,4 @@ HTML · CSS · JavaScript · Leaflet.js · Supabase · Telegram Bot API
 
 ---
 
-**KingSyah** — © 2025 · MIT License
+**KingSyah** — © · MIT License
