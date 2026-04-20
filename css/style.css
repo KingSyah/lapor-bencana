@@ -32,7 +32,9 @@ body{
   position:relative;z-index:1;
   margin-top:-28px;
   border-radius:16px 16px 0 0;
+  display:none;
 }
+.logo-bar.visible{display:block}
 .logo-bar-inner{
   max-width:720px;margin:0 auto;
   display:flex;align-items:center;gap:1rem;
