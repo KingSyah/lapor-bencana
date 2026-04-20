@@ -18,6 +18,9 @@ let telegramToken  = null;
 let telegramChatId = null;
 let reportMarkers  = L.layerGroup();   // layer untuk marker laporan
 
+/* ── Media Upload State ── */
+let selectedFile = null;  // File object or null
+
 /* ═══════════════════════════════════════════
    MAP — Leaflet
    ═══════════════════════════════════════════ */
@@ -120,8 +123,10 @@ async function loadTelegramConfig() {
 
     if (!telegramToken || !telegramChatId) {
       console.warn('[LaporBencana] Token/Chat ID tidak ditemukan di tabel settings.');
+      console.warn('[LaporBencana] Rows dari Supabase:', JSON.stringify(rows).substring(0, 500));
     } else {
       console.info('[LaporBencana] Konfigurasi Telegram berhasil dimuat.');
+      console.info('[LaporBencana] Chat ID:', telegramChatId, '| Token prefix:', telegramToken.substring(0, 10) + '...');
     }
   } catch (e) {
     console.error('[LaporBencana] Gagal memuat konfigurasi:', e);
@@ -301,6 +306,113 @@ async function cleanupExpiredReports() {
 }
 
 /* ═══════════════════════════════════════════
+   MEDIA UPLOAD — Optional photo/video
+   ═══════════════════════════════════════════ */
+const MAX_PHOTO_SIZE = 10 * 1024 * 1024;  // 10 MB
+const MAX_VIDEO_SIZE = 50 * 1024 * 1024;  // 50 MB
+
+function setupMediaUpload() {
+  const zone      = document.getElementById('uploadZone');
+  const input     = document.getElementById('mediaInput');
+  const placeholder = document.getElementById('uploadPlaceholder');
+  const preview   = document.getElementById('uploadPreview');
+  const previewImg  = document.getElementById('previewImg');
+  const previewVideo = document.getElementById('previewVideo');
+  const fileInfo  = document.getElementById('uploadFileInfo');
+  const removeBtn = document.getElementById('uploadRemove');
+
+  // Click zone → open file picker
+  zone.addEventListener('click', (e) => {
+    if (e.target === removeBtn || e.target.closest('.upload-remove')) return;
+    input.click();
+  });
+
+  // File selected
+  input.addEventListener('change', () => {
+    const file = input.files[0];
+    if (!file) return;
+    handleFileSelect(file);
+  });
+
+  // Remove file
+  removeBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    clearMedia();
+  });
+
+  // Drag & drop
+  zone.addEventListener('dragover', (e) => { e.preventDefault(); zone.style.borderColor = 'var(--orange)'; });
+  zone.addEventListener('dragleave', () => { zone.style.borderColor = ''; });
+  zone.addEventListener('drop', (e) => {
+    e.preventDefault();
+    zone.style.borderColor = '';
+    const file = e.dataTransfer.files[0];
+    if (file) handleFileSelect(file);
+  });
+
+  function handleFileSelect(file) {
+    const isImage = file.type.startsWith('image/');
+    const isVideo = file.type.startsWith('video/');
+    if (!isImage && !isVideo) {
+      showToast('⚠️', 'Format Tidak Didukung', 'Hanya foto (JPG, PNG, WEBP) atau video (MP4) yang bisa dilampirkan.');
+      return;
+    }
+    const maxSize = isImage ? MAX_PHOTO_SIZE : MAX_VIDEO_SIZE;
+    if (file.size > maxSize) {
+      const limit = isImage ? '10 MB' : '50 MB';
+      showToast('📦', 'File Terlalu Besar', `Ukuran maksimal ${limit}.`);
+      return;
+    }
+
+    selectedFile = file;
+
+    // Show preview
+    const url = URL.createObjectURL(file);
+    previewImg.style.display = 'none';
+    previewVideo.style.display = 'none';
+    if (isImage) {
+      previewImg.src = url;
+      previewImg.style.display = 'block';
+    } else {
+      previewVideo.src = url;
+      previewVideo.style.display = 'block';
+      previewVideo.play().catch(() => {});
+    }
+
+    const sizeStr = file.size < 1024 * 1024
+      ? `${(file.size / 1024).toFixed(0)} KB`
+      : `${(file.size / (1024 * 1024)).toFixed(1)} MB`;
+    fileInfo.innerHTML = `<strong>${file.name}</strong>${sizeStr}`;
+
+    placeholder.style.display = 'none';
+    preview.style.display = 'flex';
+    zone.classList.add('has-file');
+  }
+}
+
+function clearMedia() {
+  selectedFile = null;
+  const input = document.getElementById('mediaInput');
+  input.value = '';
+  document.getElementById('uploadPlaceholder').style.display = 'flex';
+  document.getElementById('uploadPreview').style.display = 'none';
+  document.getElementById('uploadZone').classList.remove('has-file');
+  const prog = document.getElementById('uploadProgress');
+  prog.style.display = 'none';
+  document.getElementById('uploadProgressBar').style.width = '0%';
+}
+
+function showUploadProgress(percent) {
+  const prog = document.getElementById('uploadProgress');
+  prog.style.display = 'block';
+  document.getElementById('uploadProgressBar').style.width = percent + '%';
+}
+
+/* ═══════════════════════════════════════════
+   SUBMIT
+   ═══════════════════════════════════════════ */
+
+/* ═══════════════════════════════════════════
    ANTI-SPAM
    ═══════════════════════════════════════════ */
 const SPAM = {
@@ -462,11 +574,11 @@ async function submitReport() {
   spinner.style.display = 'block';
   btnText.textContent   = 'Mengirim laporan…';
 
-  // Telegram message
+  // Telegram message (caption for media, text for text-only)
   const mapsLink  = `https://www.google.com/maps?q=${lat},${lng}`;
   const timestamp = new Date().toLocaleString('id-ID', { timeZone: 'Asia/Jakarta' });
 
-  const text = [
+  const caption = [
     '🚨 *LAPORAN BENCANA BARU*',
     '━━━━━━━━━━━━━━━━━━━━',
     `👤 *Nama Pelapor:* ${escapeMarkdown(nama)}`,
@@ -483,22 +595,128 @@ async function submitReport() {
   let success = false;
 
   try {
-    // 1. Send to Telegram
-    const tgRes = await fetch(
-      `https://api.telegram.org/bot${telegramToken}/sendMessage`,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          chat_id:               telegramChatId,
-          text,
-          parse_mode:            'Markdown',
-          disable_web_page_preview: true,
-        }),
-      },
-    );
-    const tgData = await tgRes.json();
-    if (!tgData.ok) throw new Error(tgData.description || 'Telegram API error');
+    // 1. Send to Telegram — with or without media
+    let tgRes, tgData;
+
+    if (selectedFile) {
+      // ── Send with media (FormData: sendPhoto / sendVideo) ──
+      const isVideo = selectedFile.type.startsWith('video/');
+      const endpoint = isVideo ? 'sendVideo' : 'sendPhoto';
+      const fileField = isVideo ? 'video' : 'photo';
+
+      const formData = new FormData();
+      formData.append('chat_id', telegramChatId);
+      formData.append(fileField, selectedFile);
+      formData.append('caption', caption);
+      formData.append('parse_mode', 'Markdown');
+
+      console.info(`[LaporBencana] Mengirim ${endpoint}:`, selectedFile.name, `(${(selectedFile.size / 1024).toFixed(0)} KB)`);
+
+      // Use XMLHttpRequest for upload progress tracking
+      tgData = await new Promise((resolve, reject) => {
+        const xhr = new XMLHttpRequest();
+        xhr.open('POST', `https://api.telegram.org/bot${telegramToken}/${endpoint}`);
+
+        xhr.upload.addEventListener('progress', (e) => {
+          if (e.lengthComputable) {
+            showUploadProgress(Math.round((e.loaded / e.total) * 100));
+          }
+        });
+
+        xhr.addEventListener('load', () => {
+          console.info(`[LaporBencana] ${endpoint} response:`, xhr.status, xhr.responseText.substring(0, 500));
+          if (xhr.status >= 200 && xhr.status < 300) {
+            try {
+              resolve(JSON.parse(xhr.responseText));
+            } catch (_) {
+              reject(new Error('Respons Telegram tidak valid'));
+            }
+          } else {
+            // HTTP error — coba parse body untuk dapat error dari Telegram
+            let errMsg = `HTTP ${xhr.status}`;
+            try {
+              const errData = JSON.parse(xhr.responseText);
+              errMsg = errData.description || errMsg;
+            } catch (_) { /* body bukan JSON */ }
+            reject(new Error(errMsg));
+          }
+        });
+
+        xhr.addEventListener('error', () => {
+          console.error('[LaporBencana] XHR network error (kemungkinan CORS):', endpoint);
+          reject(new Error('Gagal terhubung ke Telegram. Cek koneksi internet.'));
+        });
+
+        xhr.send(formData);
+      });
+
+      // Auto-handle migrasi grup → supergroup
+      if (!tgData.ok && tgData.parameters?.migrate_to_chat_id) {
+        const newChatId = tgData.parameters.migrate_to_chat_id;
+        console.warn(`[LaporBencana] Grup bermigrasi! Chat ID baru: ${newChatId}`);
+        telegramChatId = newChatId;
+        formData.set('chat_id', telegramChatId);
+
+        // Retry dengan chat_id baru
+        tgData = await new Promise((resolve, reject) => {
+          const xhr2 = new XMLHttpRequest();
+          xhr2.open('POST', `https://api.telegram.org/bot${telegramToken}/${endpoint}`);
+          xhr2.addEventListener('load', () => {
+            try { resolve(JSON.parse(xhr2.responseText)); }
+            catch (_) { reject(new Error('Respons Telegram tidak valid')); }
+          });
+          xhr2.addEventListener('error', () => reject(new Error('Gagal terhubung ke Telegram.')));
+          xhr2.send(formData);
+        });
+        console.info('[LaporBencana] Retry', endpoint, 'response:', tgData.ok);
+      }
+
+      if (!tgData.ok) throw new Error(tgData.description || 'Telegram API error');
+
+    } else {
+      // ── Text-only (sendMessage) ──
+      console.info('[LaporBencana] Mengirim sendMessage (tanpa media)');
+      tgRes = await fetch(
+        `https://api.telegram.org/bot${telegramToken}/sendMessage`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            chat_id:               telegramChatId,
+            text:                  caption,
+            parse_mode:            'Markdown',
+            disable_web_page_preview: true,
+          }),
+        },
+      );
+      tgData = await tgRes.json();
+
+      // Auto-handle migrasi grup → supergroup (Telegram kirim migrate_to_chat_id)
+      if (!tgData.ok && tgData.parameters?.migrate_to_chat_id) {
+        const newChatId = tgData.parameters.migrate_to_chat_id;
+        console.warn(`[LaporBencana] Grup bermigrasi! Chat ID baru: ${newChatId}`);
+        telegramChatId = newChatId;
+
+        // Retry dengan chat_id baru
+        tgRes = await fetch(
+          `https://api.telegram.org/bot${telegramToken}/sendMessage`,
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              chat_id:               telegramChatId,
+              text:                  caption,
+              parse_mode:            'Markdown',
+              disable_web_page_preview: true,
+            }),
+          },
+        );
+        tgData = await tgRes.json();
+        console.info('[LaporBencana] Retry sendMessage response:', tgRes.status);
+      }
+
+      if (!tgData.ok) throw new Error(tgData.description || 'Telegram API error');
+    }
 
     // 2. Save to Supabase (best effort)
     await saveReportToSupabase(nama, jenis, deskripsi, lat, lng);
@@ -514,7 +732,14 @@ async function submitReport() {
 
   } catch (e) {
     console.error('[LaporBencana] Kirim gagal:', e);
-    showToast('❌', 'Gagal Terkirim', 'Terjadi kesalahan: ' + e.message);
+    showToast('❌', 'Gagal Terkirim', 'Error: ' + (e.message || 'Tidak diketahui'));
+    console.error('[LaporBencana] Kirim gagal:', e);
+    console.error('[LaporBencana] Debug info:', {
+      telegramToken: telegramToken ? telegramToken.substring(0, 10) + '...' : null,
+      telegramChatId,
+      hasFile: !!selectedFile,
+      fileName: selectedFile?.name,
+    });
   } finally {
     btn.disabled       = false;
     spinner.style.display = 'none';
@@ -526,6 +751,7 @@ function resetForm() {
   document.getElementById('nama').value = '';
   document.getElementById('jenis').selectedIndex = 0;
   document.getElementById('deskripsi').value = '';
+  clearMedia();
   resetMap();
 }
 
@@ -576,4 +802,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Character counter for description
   setupCharCounter();
+
+  // Media upload (optional photo/video)
+  setupMediaUpload();
 });
