@@ -123,8 +123,10 @@ async function loadTelegramConfig() {
 
     if (!telegramToken || !telegramChatId) {
       console.warn('[LaporBencana] Token/Chat ID tidak ditemukan di tabel settings.');
+      console.warn('[LaporBencana] Rows dari Supabase:', JSON.stringify(rows).substring(0, 500));
     } else {
       console.info('[LaporBencana] Konfigurasi Telegram berhasil dimuat.');
+      console.info('[LaporBencana] Chat ID:', telegramChatId, '| Token prefix:', telegramToken.substring(0, 10) + '...');
     }
   } catch (e) {
     console.error('[LaporBencana] Gagal memuat konfigurasi:', e);
@@ -600,12 +602,15 @@ async function submitReport() {
       // ── Send with media (FormData: sendPhoto / sendVideo) ──
       const isVideo = selectedFile.type.startsWith('video/');
       const endpoint = isVideo ? 'sendVideo' : 'sendPhoto';
+      const fileField = isVideo ? 'video' : 'photo';
 
       const formData = new FormData();
       formData.append('chat_id', telegramChatId);
-      formData.append(isVideo ? 'video' : 'photo', selectedFile);
+      formData.append(fileField, selectedFile);
       formData.append('caption', caption);
       formData.append('parse_mode', 'Markdown');
+
+      console.info(`[LaporBencana] Mengirim ${endpoint}:`, selectedFile.name, `(${(selectedFile.size / 1024).toFixed(0)} KB)`);
 
       // Use XMLHttpRequest for upload progress tracking
       tgData = await new Promise((resolve, reject) => {
@@ -619,13 +624,29 @@ async function submitReport() {
         });
 
         xhr.addEventListener('load', () => {
-          try {
-            resolve(JSON.parse(xhr.responseText));
-          } catch (_) {
-            reject(new Error('Respons Telegram tidak valid'));
+          console.info(`[LaporBencana] ${endpoint} response:`, xhr.status, xhr.responseText.substring(0, 500));
+          if (xhr.status >= 200 && xhr.status < 300) {
+            try {
+              resolve(JSON.parse(xhr.responseText));
+            } catch (_) {
+              reject(new Error('Respons Telegram tidak valid'));
+            }
+          } else {
+            // HTTP error — coba parse body untuk dapat error dari Telegram
+            let errMsg = `HTTP ${xhr.status}`;
+            try {
+              const errData = JSON.parse(xhr.responseText);
+              errMsg = errData.description || errMsg;
+            } catch (_) { /* body bukan JSON */ }
+            reject(new Error(errMsg));
           }
         });
-        xhr.addEventListener('error', () => reject(new Error('Gagal mengunggah media')));
+
+        xhr.addEventListener('error', () => {
+          console.error('[LaporBencana] XHR network error (kemungkinan CORS):', endpoint);
+          reject(new Error('Gagal terhubung ke Telegram. Cek koneksi internet.'));
+        });
+
         xhr.send(formData);
       });
 
@@ -633,6 +654,7 @@ async function submitReport() {
 
     } else {
       // ── Text-only (sendMessage) ──
+      console.info('[LaporBencana] Mengirim sendMessage (tanpa media)');
       tgRes = await fetch(
         `https://api.telegram.org/bot${telegramToken}/sendMessage`,
         {
@@ -647,6 +669,7 @@ async function submitReport() {
         },
       );
       tgData = await tgRes.json();
+      console.info('[LaporBencana] sendMessage response:', tgRes.status, JSON.stringify(tgData).substring(0, 500));
       if (!tgData.ok) throw new Error(tgData.description || 'Telegram API error');
     }
 
@@ -664,7 +687,14 @@ async function submitReport() {
 
   } catch (e) {
     console.error('[LaporBencana] Kirim gagal:', e);
-    showToast('❌', 'Gagal Terkirim', 'Terjadi kesalahan: ' + e.message);
+    showToast('❌', 'Gagal Terkirim', 'Error: ' + (e.message || 'Tidak diketahui'));
+    console.error('[LaporBencana] Kirim gagal:', e);
+    console.error('[LaporBencana] Debug info:', {
+      telegramToken: telegramToken ? telegramToken.substring(0, 10) + '...' : null,
+      telegramChatId,
+      hasFile: !!selectedFile,
+      fileName: selectedFile?.name,
+    });
   } finally {
     btn.disabled       = false;
     spinner.style.display = 'none';
