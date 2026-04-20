@@ -5,13 +5,13 @@
 
 const CACHE_NAME = 'lapor-bencana-v1';
 const ASSETS = [
-  '/',
-  '/index.html',
-  '/css/style.css',
-  '/js/app.js',
-  '/assets/icons/icon-192x192.png',
-  '/assets/icons/icon-512x512.png',
-  '/manifest.json',
+  './',
+  './index.html',
+  './css/style.css',
+  './js/app.js',
+  './js/manifest.json',
+  './assets/icons/icon-192x192.png',
+  './assets/icons/icon-512x512.png',
 ];
 
 // ── INSTALL ──
@@ -80,7 +80,7 @@ self.addEventListener('fetch', (event) => {
       }).catch(() => {
         // Offline & tidak ada di cache — fallback
         if (event.request.destination === 'document') {
-          return caches.match('/index.html');
+          return caches.match('./index.html');
         }
         return new Response('Offline', { status: 503, statusText: 'Service Unavailable' });
       });
