@@ -14,6 +14,9 @@
   <!-- Leaflet CSS -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 
+  <!-- browser-image-compression -->
+  <script src="https://unpkg.com/browser-image-compression@2.0.2/dist/browser-image-compression.js"></script>
+
   <!-- App CSS -->
   <link rel="stylesheet" href="css/style.css">
 </head>
@@ -24,7 +27,46 @@
     <span class="header-icon">🚨</span>
     <h1>LAPOR BENCANA</h1>
     <p>Sampaikan laporanmu — bantu petugas bertindak cepat</p>
+    <a href="https://t.me/+uEUxezVG69g2OWM1" target="_blank" rel="noopener noreferrer" class="btn-join-telegram">
+      <svg class="tg-icon" viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M11.994 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm4.532 7.35l-1.6 7.534c-.12.537-.432.667-.873.414l-2.41-1.774-1.164 1.123c-.129.129-.238.238-.487.238l.173-2.462 4.488-4.056c.195-.173-.043-.27-.303-.097l-5.54 3.485-2.388-.746c-.517-.162-.53-.517.108-.766l9.335-3.598c.432-.16.81.097.668.766z"/></svg>
+      <span>Join Group Telegram</span>
+      <span class="join-arrow">→</span>
+    </a>
   </header>
+
+  <!-- ═══ Logo / Partner Bar ═══ -->
+  <div class="logo-bar">
+    <div class="logo-bar-inner">
+      <span class="logo-bar-label">Didukung oleh</span>
+      <div class="logo-track" id="logoTrack">
+        <!--
+          ⬇️ Tambahkan logo di sini saat diperlukan.
+          Contoh:
+          <a href="https://example.com" target="_blank" class="logo-item">
+            <img src="assets/logos/partner1.png" alt="Partner 1">
+          </a>
+        -->
+        <div class="logo-slot" title="Logo 1 — klik untuk tambah">
+          <span class="logo-placeholder">+</span>
+        </div>
+        <div class="logo-slot" title="Logo 2 — klik untuk tambah">
+          <span class="logo-placeholder">+</span>
+        </div>
+        <div class="logo-slot" title="Logo 3 — klik untuk tambah">
+          <span class="logo-placeholder">+</span>
+        </div>
+        <div class="logo-slot" title="Logo 4 — klik untuk tambah">
+          <span class="logo-placeholder">+</span>
+        </div>
+        <div class="logo-slot" title="Logo 5 — klik untuk tambah">
+          <span class="logo-placeholder">+</span>
+        </div>
+        <div class="logo-slot" title="Logo 6 — klik untuk tambah">
+          <span class="logo-placeholder">+</span>
+        </div>
+      </div>
+    </div>
+  </div>
 
   <!-- ═══ Main Content ═══ -->
   <main class="container">
@@ -95,6 +137,14 @@
       </div>
       <div class="upload-progress" id="uploadProgress" style="display:none">
         <div class="upload-progress-bar" id="uploadProgressBar"></div>
+      </div>
+      <div class="compress-option">
+        <label class="checkbox-wrap" for="compressCheck">
+          <input type="checkbox" id="compressCheck">
+          <span class="checkmark"></span>
+          <span class="checkbox-label">🗜️ Kompres foto sebelum kirim <span class="compress-hint">(aktifkan jika koneksi lambat)</span></span>
+        </label>
+        <div class="compress-status" id="compressStatus" style="display:none"></div>
       </div>
     </section>
 
