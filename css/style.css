@@ -1,0 +1,198 @@
+/* ═══════════════════════════════════════════
+   LAPOR BENCANA — style.css
+   ═══════════════════════════════════════════ */
+
+/* ── Reset & Tokens ── */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+
+:root{
+  --white:#ffffff;--bg:#f5f5f7;--card:#ffffff;
+  --text:#1d1d1f;--muted:#6e6e73;--border:#d2d2d7;
+  --orange:#ff6b35;--red:#e63946;
+  --accent2:#ff8c5a;--green:#34c759;
+  --orange-glow:rgba(255,107,53,.25);
+  --radius:14px;--shadow:0 2px 16px rgba(0,0,0,.07);
+}
+
+html{font-size:16px;scroll-behavior:smooth}
+
+body{
+  font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Oxygen,Ubuntu,sans-serif;
+  background:var(--bg);color:var(--text);line-height:1.6;
+  min-height:100dvh;display:flex;flex-direction:column;align-items:center;
+}
+
+/* ── Header ── */
+.header{
+  width:100%;background:linear-gradient(135deg,var(--orange),var(--red));
+  color:var(--white);text-align:center;padding:1.75rem 1rem 1.5rem;
+  position:relative;overflow:hidden;
+}
+.header::after{
+  content:'';position:absolute;bottom:-30px;left:50%;transform:translateX(-50%);
+  width:140%;height:60px;background:var(--bg);border-radius:50%;
+}
+.header h1{font-size:1.5rem;font-weight:800;letter-spacing:.5px}
+.header p{font-size:.85rem;opacity:.9;margin-top:.25rem}
+
+/* ── Container ── */
+.container{
+  width:100%;max-width:520px;padding:1.25rem;margin-top:-.5rem;
+  position:relative;z-index:1;
+}
+
+/* ── Card ── */
+.card{
+  background:var(--card);border-radius:var(--radius);
+  box-shadow:var(--shadow);padding:1.5rem;margin-bottom:1.25rem;
+}
+.card-title{
+  font-size:.8rem;font-weight:700;text-transform:uppercase;
+  letter-spacing:1px;color:var(--muted);margin-bottom:1rem;
+  display:flex;align-items:center;gap:.5rem;
+}
+.card-title .icon{font-size:1rem}
+
+/* ── Form ── */
+label{display:block;font-size:.8rem;font-weight:600;color:var(--muted);margin-bottom:.35rem}
+
+input[type="text"],select,textarea{
+  width:100%;padding:.7rem .85rem;border:1.5px solid var(--border);
+  border-radius:10px;font-size:.95rem;background:var(--bg);
+  color:var(--text);transition:border .2s,box-shadow .2s;outline:none;
+  font-family:inherit;
+}
+input:focus,select:focus,textarea:focus{
+  border-color:var(--orange);box-shadow:0 0 0 3px var(--orange-glow);
+}
+textarea{resize:vertical;min-height:90px}
+
+select{
+  appearance:none;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%236e6e73' viewBox='0 0 16 16'%3E%3Cpath d='M1.5 5.5l6.5 6 6.5-6'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:right .85rem center;
+}
+.form-group{margin-bottom:1rem}
+
+/* ── Map ── */
+#map{
+  width:100%;height:260px;border-radius:12px;
+  border:1.5px solid var(--border);z-index:0;
+}
+.map-hint{
+  font-size:.78rem;color:var(--muted);margin-bottom:.75rem;
+}
+.map-actions{display:flex;gap:.5rem;margin-top:.75rem;flex-wrap:wrap}
+
+.btn-ghost{
+  flex:1;min-width:0;padding:.55rem .5rem;border:1.5px solid var(--border);
+  border-radius:10px;background:var(--white);font-size:.78rem;font-weight:600;
+  color:var(--text);cursor:pointer;transition:all .2s;
+  display:flex;align-items:center;justify-content:center;gap:.35rem;
+}
+.btn-ghost:hover{border-color:var(--orange);color:var(--orange)}
+.btn-ghost:disabled{opacity:.5;cursor:not-allowed}
+
+.coord-badge{
+  margin-top:.5rem;font-size:.75rem;color:var(--muted);
+  background:var(--bg);padding:.4rem .7rem;border-radius:8px;
+  font-family:'SF Mono',Menlo,monospace;text-align:center;
+}
+
+/* ── Submit Button ── */
+.btn-submit{
+  width:100%;padding:.85rem;border:none;border-radius:12px;
+  background:linear-gradient(135deg,var(--orange),var(--red));
+  color:var(--white);font-size:1rem;font-weight:700;
+  cursor:pointer;transition:transform .15s,box-shadow .15s;
+  box-shadow:0 4px 14px var(--orange-glow);
+  display:flex;align-items:center;justify-content:center;gap:.5rem;
+}
+.btn-submit:hover{transform:translateY(-1px);box-shadow:0 6px 20px var(--orange-glow)}
+.btn-submit:active{transform:scale(.98)}
+.btn-submit:disabled{opacity:.6;cursor:not-allowed;transform:none}
+
+/* ── Spinner ── */
+.spinner{
+  width:20px;height:20px;border:2.5px solid rgba(255,255,255,.35);
+  border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite;
+  display:none;
+}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ═══ Footer (from COPYRIGHT.md style) ═══ */
+.footer{
+  width:100%;text-align:center;padding:1.5rem 1rem;
+  margin-top:auto;
+}
+.footer-inner{
+  display:inline-flex;align-items:center;gap:.6rem;
+  padding:.5rem 1.25rem;
+  border-radius:50px;
+  background:rgba(255,107,53,.06);
+  border:1px solid rgba(255,107,53,.15);
+  backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
+}
+.footer-crown{
+  font-size:1rem;
+  animation:crownBob 2s ease-in-out infinite;
+  display:inline-block;
+}
+.footer-crown:last-child{animation-delay:.3s}
+
+@keyframes crownBob{
+  0%,100%{transform:translateY(0) rotate(-5deg)}
+  50%{transform:translateY(-2px) rotate(5deg)}
+}
+
+.footer-text{
+  font-size:.78rem;font-weight:700;
+  background:linear-gradient(90deg,var(--orange),var(--red),var(--orange));
+  background-size:200% auto;
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+  background-clip:text;color:transparent;
+  animation:shimmer 3s linear infinite;
+}
+@keyframes shimmer{
+  0%{background-position:0% center}
+  100%{background-position:200% center}
+}
+
+.footer-sub{
+  font-size:.7rem;color:var(--muted);margin-top:.6rem;
+}
+
+/* ── Toast Overlay ── */
+.toast-overlay{
+  position:fixed;inset:0;background:rgba(0,0,0,.35);
+  display:none;align-items:center;justify-content:center;z-index:9999;
+  backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);
+}
+.toast-overlay.show{display:flex}
+
+.toast-card{
+  background:var(--white);border-radius:20px;padding:2rem 1.75rem;
+  text-align:center;max-width:320px;width:90%;
+  box-shadow:0 20px 50px rgba(0,0,0,.15);
+  animation:popIn .35s cubic-bezier(.175,.885,.32,1.275);
+}
+@keyframes popIn{from{opacity:0;transform:scale(.8)}to{opacity:1;transform:scale(1)}}
+
+.toast-icon{font-size:3rem;margin-bottom:.75rem}
+.toast-card h3{font-size:1.15rem;margin-bottom:.35rem}
+.toast-card p{font-size:.85rem;color:var(--muted)}
+.toast-btn{
+  margin-top:1.25rem;padding:.6rem 2rem;border:none;border-radius:10px;
+  background:var(--orange);color:#fff;font-weight:700;font-size:.9rem;
+  cursor:pointer;transition:background .2s;
+}
+.toast-btn:hover{background:var(--red)}
+
+/* ── Leaflet popup fix ── */
+.leaflet-popup-content-wrapper{border-radius:12px !important}
+
+/* ── Responsive ── */
+@media(min-width:560px){
+  .header h1{font-size:1.8rem}
+  #map{height:320px}
+}
