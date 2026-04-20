@@ -400,12 +400,87 @@ function clearMedia() {
   const prog = document.getElementById('uploadProgress');
   prog.style.display = 'none';
   document.getElementById('uploadProgressBar').style.width = '0%';
+  // Reset compression status
+  const statusEl = document.getElementById('compressStatus');
+  if (statusEl) {
+    statusEl.style.display = 'none';
+    statusEl.className = 'compress-status';
+    statusEl.innerHTML = '';
+  }
 }
 
 function showUploadProgress(percent) {
   const prog = document.getElementById('uploadProgress');
   prog.style.display = 'block';
   document.getElementById('uploadProgressBar').style.width = percent + '%';
+}
+
+/* ═══════════════════════════════════════════
+   IMAGE COMPRESSION
+   ═══════════════════════════════════════════ */
+const COMPRESS_OPTIONS = {
+  maxSizeMB:        0.5,      // target: di bawah 500 KB
+  maxWidthOrHeight: 1920,     // resize jika lebih besar
+  useWebWorker:     true,     // offload ke web worker
+  fileType:         'image/jpeg', // output format (lebih kecil dari PNG)
+  initialQuality:   0.8,     // kualitas awal
+};
+
+/** Check if compression is enabled by user */
+function isCompressEnabled() {
+  const cb = document.getElementById('compressCheck');
+  return cb ? cb.checked : false;
+}
+
+/** Compress an image file using browser-image-compression */
+async function compressImage(file) {
+  const statusEl = document.getElementById('compressStatus');
+
+  // Show status
+  statusEl.style.display = 'flex';
+  statusEl.className = 'compress-status compressing';
+  statusEl.innerHTML = '⏳ Mengompres foto…';
+
+  const originalSize = file.size;
+
+  try {
+    if (typeof imageCompression === 'undefined') {
+      throw new Error('Library kompresi belum dimuat');
+    }
+
+    const compressed = await imageCompression(file, COMPRESS_OPTIONS);
+
+    const ratio = ((1 - compressed.size / originalSize) * 100).toFixed(0);
+    const origStr = formatFileSize(originalSize);
+    const compStr = formatFileSize(compressed.size);
+
+    if (compressed.size < originalSize) {
+      statusEl.className = 'compress-status success';
+      statusEl.innerHTML = `✅ Kompresi berhasil: ${origStr} → ${compStr} (−${ratio}%)`;
+      console.info(`[LaporBencana] Compressed: ${origStr} → ${compStr} (−${ratio}%)`);
+    } else {
+      statusEl.className = 'compress-status success';
+      statusEl.innerHTML = `✅ Foto sudah optimal (${origStr})`;
+      console.info('[LaporBencana] File already optimal, skipping compression');
+    }
+
+    // Rename to .jpg since we convert to JPEG
+    const newName = file.name.replace(/\.[^.]+$/, '.jpg');
+    return new File([compressed], newName, { type: 'image/jpeg' });
+
+  } catch (e) {
+    console.warn('[LaporBencana] Compression failed:', e);
+    statusEl.className = 'compress-status error';
+    statusEl.innerHTML = `⚠️ Kompresi gagal, kirim asli (${formatFileSize(originalSize)})`;
+    return file; // fallback: kirim file asli
+  }
+}
+
+/** Format bytes to human-readable */
+function formatFileSize(bytes) {
+  if (bytes < 1024) return bytes + ' B';
+  if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(0) + ' KB';
+  return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
 }
 
 /* ═══════════════════════════════════════════
@@ -597,20 +672,28 @@ async function submitReport() {
   try {
     // 1. Send to Telegram — with or without media
     let tgRes, tgData;
+    let fileToSend = selectedFile;
 
     if (selectedFile) {
-      // ── Send with media (FormData: sendPhoto / sendVideo) ──
+      const isImage = selectedFile.type.startsWith('image/');
       const isVideo = selectedFile.type.startsWith('video/');
+
+      // ── Compress image if enabled ──
+      if (isImage && isCompressEnabled()) {
+        fileToSend = await compressImage(selectedFile);
+      }
+
+      // ── Send with media (FormData: sendPhoto / sendVideo) ──
       const endpoint = isVideo ? 'sendVideo' : 'sendPhoto';
       const fileField = isVideo ? 'video' : 'photo';
 
       const formData = new FormData();
       formData.append('chat_id', telegramChatId);
-      formData.append(fileField, selectedFile);
+      formData.append(fileField, fileToSend);
       formData.append('caption', caption);
       formData.append('parse_mode', 'Markdown');
 
-      console.info(`[LaporBencana] Mengirim ${endpoint}:`, selectedFile.name, `(${(selectedFile.size / 1024).toFixed(0)} KB)`);
+      console.info(`[LaporBencana] Mengirim ${endpoint}:`, fileToSend.name, `(${(fileToSend.size / 1024).toFixed(0)} KB)`);
 
       // Use XMLHttpRequest for upload progress tracking
       tgData = await new Promise((resolve, reject) => {
@@ -733,12 +816,12 @@ async function submitReport() {
   } catch (e) {
     console.error('[LaporBencana] Kirim gagal:', e);
     showToast('❌', 'Gagal Terkirim', 'Error: ' + (e.message || 'Tidak diketahui'));
-    console.error('[LaporBencana] Kirim gagal:', e);
     console.error('[LaporBencana] Debug info:', {
       telegramToken: telegramToken ? telegramToken.substring(0, 10) + '...' : null,
       telegramChatId,
       hasFile: !!selectedFile,
       fileName: selectedFile?.name,
+      compressedFile: fileToSend !== selectedFile ? fileToSend?.name : null,
     });
   } finally {
     btn.disabled       = false;
