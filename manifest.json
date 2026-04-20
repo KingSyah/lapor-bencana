@@ -2,7 +2,7 @@
   "name": "Lapor Bencana",
   "short_name": "Lapor",
   "description": "Website Pelaporan Bencana — Laporkan bencana secara cepat dan akurat.",
-  "start_url": "/",
+  "start_url": "/lapor-bencana/",
   "display": "standalone",
   "background_color": "#ffffff",
   "theme_color": "#ff6b35",
