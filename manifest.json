@@ -1,0 +1,25 @@
+{
+  "name": "Lapor Bencana",
+  "short_name": "Lapor",
+  "description": "Website Pelaporan Bencana — Laporkan bencana secara cepat dan akurat.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#ff6b35",
+  "orientation": "portrait",
+  "lang": "id",
+  "icons": [
+    {
+      "src": "icons/icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icons/icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
