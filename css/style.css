@@ -139,6 +139,66 @@ select{
   font-family:'SF Mono',Menlo,monospace;text-align:center;
 }
 
+/* ── Upload Zone ── */
+.card-attach{padding-bottom:1rem}
+.optional-badge{
+  font-size:.62rem;font-weight:600;text-transform:none;
+  letter-spacing:0;color:var(--muted);background:var(--bg);
+  padding:.15rem .5rem;border-radius:6px;margin-left:.35rem;
+  vertical-align:middle;
+}
+.upload-zone{
+  border:1.5px dashed var(--border);border-radius:12px;
+  padding:.85rem;cursor:pointer;transition:border-color .2s,background .2s;
+  position:relative;min-height:56px;
+  display:flex;align-items:center;justify-content:center;
+}
+.upload-zone:hover{border-color:var(--orange);background:rgba(255,107,53,.03)}
+.upload-zone.has-file{border-style:solid;border-color:var(--green)}
+
+.upload-placeholder{
+  display:flex;align-items:center;gap:.5rem;
+  font-size:.82rem;color:var(--muted);
+  flex-wrap:wrap;justify-content:center;
+}
+.upload-icon{font-size:1.2rem}
+.upload-text{font-weight:600;color:var(--text)}
+.upload-hint{font-size:.68rem;width:100%;text-align:center;margin-top:.1rem}
+
+.upload-preview{
+  position:relative;display:flex;align-items:center;gap:.75rem;
+  width:100%;
+}
+.upload-preview img,.upload-preview video{
+  width:56px;height:56px;object-fit:cover;border-radius:8px;flex-shrink:0;
+}
+.upload-file-info{
+  flex:1;min-width:0;
+  font-size:.75rem;color:var(--muted);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+.upload-file-info strong{color:var(--text);display:block;font-size:.8rem}
+
+.upload-remove{
+  position:absolute;top:-6px;left:50px;
+  width:22px;height:22px;border-radius:50%;
+  border:none;background:var(--red);color:#fff;
+  font-size:.7rem;font-weight:700;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  box-shadow:0 1px 4px rgba(0,0,0,.2);
+  transition:transform .15s;
+}
+.upload-remove:hover{transform:scale(1.15)}
+
+.upload-progress{
+  margin-top:.5rem;height:4px;background:var(--bg);
+  border-radius:4px;overflow:hidden;
+}
+.upload-progress-bar{
+  height:100%;width:0%;background:linear-gradient(90deg,var(--orange),var(--red));
+  border-radius:4px;transition:width .3s;
+}
+
 /* ── Submit Button ── */
 .btn-submit{
   width:100%;padding:.85rem;border:none;border-radius:12px;
