@@ -86,10 +86,14 @@ function useMyLocation() {
 
 /* ═══════════════════════════════════════════
    SUPABASE — Load Telegram Credentials
+   Supports two table schemas:
+     A) Key-value: columns = key, value
+        rows: [{key:"telegram_token",value:"..."}, {key:"telegram_chat_id",value:"..."}]
+     B) Direct columns: telegram_token, telegram_chat_id (or token, chat_id)
    ═══════════════════════════════════════════ */
 async function loadTelegramConfig() {
   try {
-    const res = await fetch(`${SUPABASE_URL}/rest/v1/settings?select=*&limit=1`, {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/settings?select=*&limit=10`, {
       headers: {
         apikey:        SUPABASE_ANON,
         Authorization: `Bearer ${SUPABASE_ANON}`,
@@ -101,12 +105,21 @@ async function loadTelegramConfig() {
     const rows = await res.json();
     if (!rows.length) throw new Error('Tabel settings kosong.');
 
-    // Support multiple column name conventions
-    telegramToken  = rows[0].telegram_token  || rows[0].token  || null;
-    telegramChatId = rows[0].telegram_chat_id || rows[0].chat_id || null;
+    // ── Schema A: key-value table (key, value) ──
+    if (rows[0].key !== undefined && rows[0].value !== undefined) {
+      for (const row of rows) {
+        if (row.key === 'telegram_token')   telegramToken  = row.value;
+        if (row.key === 'telegram_chat_id') telegramChatId = row.value;
+      }
+    }
+    // ── Schema B: direct columns ──
+    else {
+      telegramToken  = rows[0].telegram_token  || rows[0].token  || null;
+      telegramChatId = rows[0].telegram_chat_id || rows[0].chat_id || null;
+    }
 
     if (!telegramToken || !telegramChatId) {
-      console.warn('[LaporBencana] Token / Chat ID tidak ditemukan di tabel settings.');
+      console.warn('[LaporBencana] Token / Chat ID tidak ditemukan. Pastikan tabel settings berisi key telegram_token & telegram_chat_id.');
     } else {
       console.info('[LaporBencana] Konfigurasi Telegram berhasil dimuat.');
     }
