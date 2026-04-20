@@ -5,10 +5,16 @@
 /* ── Service Worker Registration ── */
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
+    // Gunakan path absolut '/lapor-bencana/sw.js' dan tentukan scope-nya
+    // Pastikan file sw.js sudah Anda pindahkan ke root (sejajar index.html)
     navigator.serviceWorker
-      .register('js/sw.js')
-      .then((reg) => console.info('[PWA] Service Worker registered:', reg.scope))
-      .catch((err) => console.warn('[PWA] Service Worker registration failed:', err));
+      .register('/lapor-bencana/sw.js', { scope: '/lapor-bencana/' })
+      .then((reg) => {
+        console.info('[PWA] Service Worker registered with scope:', reg.scope);
+      })
+      .catch((err) => {
+        console.warn('[PWA] Service Worker registration failed:', err);
+      });
   });
 }
 
