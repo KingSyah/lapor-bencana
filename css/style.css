@@ -231,7 +231,7 @@ select{
 }
 
 /* ── Upload Zone ── */
-.card-attach{padding-bottom:1rem}
+.card-attach{padding-bottom:1.25rem}
 .optional-badge{
   font-size:.62rem;font-weight:600;text-transform:none;
   letter-spacing:0;color:var(--muted);background:var(--bg);
