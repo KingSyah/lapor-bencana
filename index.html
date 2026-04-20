@@ -76,6 +76,28 @@
       <div class="coord-badge" id="coordBadge">Koordinat: 4.47000, 97.94000 (Kota Langsa)</div>
     </section>
 
+    <!-- Lampiran (Opsional) -->
+    <section class="card card-attach">
+      <div class="card-title"><span class="icon">📎</span> Lampiran <span class="optional-badge">Opsional</span></div>
+      <input type="file" id="mediaInput" accept="image/*,video/*" hidden>
+      <div class="upload-zone" id="uploadZone">
+        <div class="upload-placeholder" id="uploadPlaceholder">
+          <span class="upload-icon">📷</span>
+          <span class="upload-text">Tambah foto / video</span>
+          <span class="upload-hint">Maks 10 MB foto · 50 MB video</span>
+        </div>
+        <div class="upload-preview" id="uploadPreview" style="display:none">
+          <img id="previewImg" src="" alt="Preview">
+          <video id="previewVideo" src="" muted loop></video>
+          <div class="upload-file-info" id="uploadFileInfo"></div>
+          <button class="upload-remove" id="uploadRemove" title="Hapus">✕</button>
+        </div>
+      </div>
+      <div class="upload-progress" id="uploadProgress" style="display:none">
+        <div class="upload-progress-bar" id="uploadProgressBar"></div>
+      </div>
+    </section>
+
     <!-- Submit -->
     <button class="btn-submit" id="btnSubmit">
       <span class="spinner" id="spinner"></span>
@@ -97,9 +119,9 @@
   <!-- ═══ Footer (styled from COPYRIGHT.md) ═══ -->
   <footer class="footer">
     <div class="footer-inner">
-      <span class="footer-crown">👑</span>
+      <span class="footer-crown">🚨</span>
       <span class="footer-text" id="copyright-text"></span>
-      <span class="footer-crown">👑</span>
+      <span class="footer-crown">🚨</span>
     </div>
   </footer>
 
