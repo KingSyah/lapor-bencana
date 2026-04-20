@@ -888,4 +888,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Media upload (optional photo/video)
   setupMediaUpload();
+
+  // Show logo bar only if real logos exist
+  const logoBar = document.querySelector('.logo-bar');
+  if (logoBar && logoBar.querySelectorAll('.logo-item').length > 0) {
+    logoBar.classList.add('visible');
+  }
 });
