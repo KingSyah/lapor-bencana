@@ -29,6 +29,12 @@
   <!-- ═══ Main Content ═══ -->
   <main class="container">
 
+    <!-- Honeypot — hidden from humans, filled by bots -->
+    <div class="hp-wrap" aria-hidden="true">
+      <label for="hp_website">Website</label>
+      <input type="text" id="hp_website" name="website" tabindex="-1" autocomplete="off">
+    </div>
+
     <!-- Info Pelapor -->
     <section class="card">
       <div class="card-title"><span class="icon">👤</span> Informasi Pelapor</div>
@@ -52,8 +58,9 @@
         </select>
       </div>
       <div class="form-group">
-        <label for="deskripsi">Deskripsi Keadaan</label>
+        <label for="deskripsi">Deskripsi Keadaan <span class="char-hint" id="charHint">(min. 20 karakter)</span></label>
         <textarea id="deskripsi" placeholder="Jelaskan situasi bencana, korban, kerusakan, dll." required></textarea>
+        <div class="char-counter" id="charCounter">0 / 20</div>
       </div>
     </section>
 
@@ -90,9 +97,9 @@
   <!-- ═══ Footer (styled from COPYRIGHT.md) ═══ -->
   <footer class="footer">
     <div class="footer-inner">
-      <span class="footer-crown">👑</span>
+      <span class="footer-crown">🚨</span>
       <span class="footer-text" id="copyright-text"></span>
-      <span class="footer-crown">👑</span>
+      <span class="footer-crown">🚨</span>
     </div>
   </footer>
 
@@ -103,6 +110,22 @@
       <h3 id="toastTitle">Laporan Terkirim!</h3>
       <p id="toastMsg">Petugas akan segera menindaklanjuti laporan Anda.</p>
       <button class="toast-btn" id="toastClose">Tutup</button>
+    </div>
+  </div>
+
+  <!-- ═══ Cooldown Overlay ═══ -->
+  <div class="cooldown-overlay" id="cooldownOverlay">
+    <div class="cooldown-card">
+      <div class="cooldown-icon">⏳</div>
+      <h3>Tunggu Sebentar</h3>
+      <p>Untuk mencegah spam, harap tunggu:</p>
+      <div class="cooldown-ring">
+        <svg viewBox="0 0 80 80">
+          <circle class="track" cx="40" cy="40" r="35"/>
+          <circle class="progress" id="cooldownCircle" cx="40" cy="40" r="35"/>
+        </svg>
+        <span class="label" id="cooldownLabel">60</span>
+      </div>
     </div>
   </div>
 
