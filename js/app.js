@@ -27,6 +27,7 @@ const SB_HEADERS = {
 let telegramToken  = null;
 let telegramChatId = null;
 let reportMarkers  = L.layerGroup();   // layer untuk marker laporan
+let crisisCircles  = L.layerGroup();   // layer untuk zona krisis (lingkaran merah)
 
 /* ── Media Upload State ── */
 let selectedFile = null;  // File object or null
@@ -46,6 +47,7 @@ L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
 
 // Layer group untuk laporan
 reportMarkers.addTo(map);
+crisisCircles.addTo(map);
 
 // Marker utama (draggable)
 const marker = L.marker(LANGSA, {
@@ -208,8 +210,9 @@ async function loadReports() {
     cardEl.style.display = 'block';
     countEl.textContent = `${reports.length} laporan`;
 
-    // Clear old markers
+    // Clear old markers & circles
     reportMarkers.clearLayers();
+    crisisCircles.clearLayers();
 
     // Detect crisis clusters for highlight
     const crisisIds = detectCrisisClusters(reports);
@@ -246,14 +249,29 @@ async function loadReports() {
     reports.forEach((r) => {
       const emoji = getTypeEmoji(r.type);
       const isCrisis = crisisIds.has(r.id);
-      const markerClass = isCrisis ? 'crisis-marker' : '';
+
+      // Tambah lingkaran merah transparan untuk zona krisis
+      if (isCrisis) {
+        const crisisCircle = L.circle([r.lat, r.lng], {
+          radius: 50, // meter — sesuai CLUSTER_RADIUS
+          color: '#e63946',
+          fillColor: '#e63946',
+          fillOpacity: 0.2,
+          weight: 2,
+          opacity: 0.6,
+          interactive: false,
+          className: 'crisis-zone-circle',
+        });
+        crisisCircles.addLayer(crisisCircle);
+      }
+
       const markerHtml = isCrisis
-        ? `<div class="crisis-marker" style="font-size:1.3rem;text-align:center;line-height:1;filter:drop-shadow(0 0 4px rgba(230,57,70,.8))">${emoji}</div>`
+        ? `<div class="crisis-marker" style="font-size:1.3rem;text-align:center;line-height:1">${emoji}</div>`
         : `<div style="font-size:1.1rem;text-align:center;line-height:1;filter:drop-shadow(0 1px 2px rgba(0,0,0,.3))">${emoji}</div>`;
 
       const m = L.marker([r.lat, r.lng], {
         icon: L.divIcon({
-          className: markerClass,
+          className: isCrisis ? 'crisis-marker' : '',
           html: markerHtml,
           iconSize: isCrisis ? [28, 28] : [22, 22],
           iconAnchor: isCrisis ? [14, 14] : [11, 11],
@@ -261,15 +279,18 @@ async function loadReports() {
         }),
       });
 
+      const popupId = `popup-${r.id}`;
       const upvoteInfo = (r.upvotes || 0) > 0 ? `<br><span style="font-size:.72rem;color:var(--orange)">👍 ${r.upvotes} validasi</span>` : '';
       m.bindPopup(`
-        <div style="font-size:.82rem;line-height:1.5;min-width:160px">
+        <div style="font-size:.82rem;line-height:1.5;min-width:200px;max-height:300px;overflow-y:auto" id="${popupId}">
           <strong>${escapeHtml(r.type)}</strong><br>
           <span style="color:#6e6e73">${escapeHtml(r.description)}</span><br>
           <span style="font-size:.72rem;color:#999">👤 ${escapeHtml(r.name)} · ${formatTimeAgo(r.created_at)}</span>
           ${upvoteInfo}
+          <br><br>
+          <button onclick="loadLocationHistory(${r.lat},${r.lng},'${popupId}')" style="font-size:.72rem;padding:3px 8px;border:1px solid var(--orange);border-radius:6px;background:transparent;color:var(--orange);cursor:pointer">📋 Lihat Histori Lokasi</button>
         </div>
-      `);
+      `, { maxWidth: 280, maxHeight: 320 });
       reportMarkers.addLayer(m);
     });
 
@@ -295,6 +316,68 @@ function flyToReport(lat, lng) {
       layer.openPopup();
     }
   });
+}
+
+/** Load location history from Supabase (max 7 hari terakhir saja) */
+async function loadLocationHistory(lat, lng, popupId) {
+  const el = document.getElementById(popupId);
+  if (!el) return;
+
+  // Tombol → loading
+  const btn = el.querySelector('button');
+  if (btn) { btn.textContent = '⏳ Memuat...'; btn.disabled = true; }
+
+  try {
+    // Approximate 50m radius as ±0.0005 degrees
+    const d = 0.0005;
+    // Hanya ambil laporan 7 hari terakhir
+    const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+    const res = await fetch(
+      `${SUPABASE_URL}/rest/v1/reports?select=type,description,name,created_at,upvotes,expires_at` +
+      `&lat=gte.${lat - d}&lat=lte.${lat + d}` +
+      `&lng=gte.${lng - d}&lng=lte.${lng + d}` +
+      `&created_at=gte.${sevenDaysAgo}` +
+      `&order=created_at.desc&limit=10`,
+      { headers: SB_HEADERS },
+    );
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+
+    const history = await res.json();
+    if (!history.length) {
+      if (btn) { btn.textContent = '📭 Tidak ada histori'; btn.disabled = true; }
+      return;
+    }
+
+    const now = Date.now();
+    const items = history.map((h) => {
+      const emoji = getTypeEmoji(h.type);
+      const expired = new Date(h.expires_at).getTime() < now;
+      // Berapa lama sejak kejadian
+      const ageMs = now - new Date(h.created_at).getTime();
+      const ageDays = Math.floor(ageMs / (24 * 60 * 60 * 1000));
+      const ageLabel = ageDays === 0 ? 'hari ini' : `${ageDays}h lalu`;
+      const status = expired
+        ? `<span style="color:#999;font-size:.65rem">⏱ selesai · ${ageLabel}</span>`
+        : `<span style="color:var(--orange);font-size:.65rem">🔴 aktif · ${ageLabel}</span>`;
+      const votes = (h.upvotes || 0) > 0 ? ` · 👍${h.upvotes}` : '';
+      return `
+        <div style="padding:4px 0;border-bottom:1px solid rgba(150,150,150,.15)">
+          <div style="font-size:.78rem"><strong>${emoji} ${escapeHtml(h.type)}</strong> ${status}</div>
+          <div style="font-size:.72rem;color:#6e6e73">${escapeHtml(h.description)}</div>
+          <div style="font-size:.65rem;color:#999">👤 ${escapeHtml(h.name)}${votes}</div>
+        </div>`;
+    }).join('');
+
+    // Replace popup content with history
+    el.innerHTML = `
+      <div style="font-size:.78rem;font-weight:700;margin-bottom:6px;color:var(--orange)">📋 Histori Lokasi (${history.length})</div>
+      ${items}
+    `;
+
+  } catch (e) {
+    console.warn('[LaporBencana] Gagal memuat histori:', e);
+    if (btn) { btn.textContent = '❌ Gagal memuat'; btn.disabled = true; }
+  }
 }
 
 /** Extract emoji from type string */
@@ -1142,4 +1225,34 @@ document.addEventListener('DOMContentLoaded', () => {
   if (logoBar && logoBar.querySelectorAll('.logo-item').length > 0) {
     logoBar.classList.add('visible');
   }
+
+  // Auto-refresh reports every 30s (keeps crisis zones & markers up-to-date)
+  let autoRefreshTimer = null;
+
+  function startAutoRefresh() {
+    if (autoRefreshTimer) return;
+    autoRefreshTimer = setInterval(() => {
+      loadReports();
+      cleanupExpiredReports();
+    }, 30000); // 30 detik
+  }
+
+  function stopAutoRefresh() {
+    if (autoRefreshTimer) {
+      clearInterval(autoRefreshTimer);
+      autoRefreshTimer = null;
+    }
+  }
+
+  // Pause polling saat tab disembunyikan, resume saat aktif lagi
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) {
+      stopAutoRefresh();
+    } else {
+      loadReports();       // immediate refresh saat kembali ke tab
+      startAutoRefresh();
+    }
+  });
+
+  startAutoRefresh();
 });
