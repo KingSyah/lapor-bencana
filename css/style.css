@@ -654,20 +654,22 @@ body.dark .btn-map-expand{background:var(--card);border-color:var(--border);colo
   filter:drop-shadow(0 0 6px rgba(230,57,70,.6)) !important;
 }
 
-/* ═══ 7. FAB Refresh ═══ */
-.fab-refresh{
-  position:fixed;bottom:1.5rem;right:1.5rem;
-  width:48px;height:48px;border-radius:50%;
-  border:none;background:var(--orange);color:#fff;
-  font-size:1.2rem;cursor:pointer;z-index:9996;
-  box-shadow:0 4px 16px rgba(255,107,53,.4);
-  display:flex;align-items:center;justify-content:center;
-  transition:transform .2s,box-shadow .2s;
+/* ═══ 7. Refresh Bar (above Informasi Pelapor) ═══ */
+.refresh-bar{
+  display:flex;align-items:center;gap:.4rem;
+  padding:.5rem 1rem;margin-bottom:.75rem;
+  border:1px solid var(--border);border-radius:8px;
+  background:var(--card-bg);color:var(--text);
+  font-size:.85rem;cursor:pointer;
+  transition:background .2s,border-color .2s;
+  width:100%;
 }
-.fab-refresh:hover{transform:scale(1.1);box-shadow:0 6px 20px rgba(255,107,53,.5)}
-.fab-refresh:active{transform:scale(.95)}
-.fab-refresh.spinning{animation:spin .6s linear}
-body.dark .fab-refresh{background:var(--accent2);box-shadow:0 4px 16px rgba(255,140,90,.4)}
+.refresh-bar:hover{background:var(--input-bg);border-color:var(--orange)}
+.refresh-bar:active{opacity:.7}
+.refresh-bar .refresh-icon{font-size:1rem;transition:transform .4s}
+.refresh-bar.spinning .refresh-icon{animation:spin .6s linear}
+body.dark .refresh-bar{border-color:var(--border);background:var(--card-bg)}
+body.dark .refresh-bar:hover{border-color:var(--accent2)}
 
 /* ═══ Emergency Numbers (inline in map card) ═══ */
 .emergency-bar{
