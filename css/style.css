@@ -686,23 +686,6 @@ body.dark .btn-map-expand{background:var(--card);border-color:var(--border);colo
   pointer-events:none;
 }
 
-/* ═══ 7. Refresh Bar (above Informasi Pelapor) ═══ */
-.refresh-bar{
-  display:flex;align-items:center;gap:.4rem;
-  padding:.5rem 1rem;margin-bottom:.75rem;
-  border:1px solid var(--border);border-radius:8px;
-  background:var(--card-bg);color:var(--text);
-  font-size:.85rem;cursor:pointer;
-  transition:background .2s,border-color .2s;
-  width:100%;
-}
-.refresh-bar:hover{background:var(--input-bg);border-color:var(--orange)}
-.refresh-bar:active{opacity:.7}
-.refresh-bar .refresh-icon{font-size:1rem;transition:transform .4s}
-.refresh-bar.spinning .refresh-icon{animation:spin .6s linear}
-body.dark .refresh-bar{border-color:var(--border);background:var(--card-bg)}
-body.dark .refresh-bar:hover{border-color:var(--accent2)}
-
 /* ═══ Emergency Numbers (inline in map card) ═══ */
 .emergency-bar{
   margin-top:.75rem;position:relative;
