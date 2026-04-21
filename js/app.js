@@ -5,16 +5,10 @@
 /* ── Service Worker Registration ── */
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    // Gunakan path absolut '/lapor-bencana/sw.js' dan tentukan scope-nya
-    // Pastikan file sw.js sudah Anda pindahkan ke root (sejajar index.html)
     navigator.serviceWorker
-      .register('/lapor-bencana/sw.js', { scope: '/lapor-bencana/' })
-      .then((reg) => {
-        console.info('[PWA] Service Worker registered with scope:', reg.scope);
-      })
-      .catch((err) => {
-        console.warn('[PWA] Service Worker registration failed:', err);
-      });
+      .register('js/sw.js')
+      .then((reg) => console.info('[PWA] Service Worker registered:', reg.scope))
+      .catch((err) => console.warn('[PWA] Service Worker registration failed:', err));
   });
 }
 
@@ -193,7 +187,7 @@ async function loadReports() {
 
   try {
     const res = await fetch(
-      `${SUPABASE_URL}/rest/v1/reports?select=*&order=created_at.desc&limit=20&expires_at=gt.${new Date().toISOString()}`,
+      `${SUPABASE_URL}/rest/v1/reports?select=*,upvotes&order=created_at.desc&limit=20&expires_at=gt.${new Date().toISOString()}`,
       { headers: SB_HEADERS },
     );
     if (!res.ok) throw new Error('HTTP ' + res.status);
@@ -217,10 +211,17 @@ async function loadReports() {
     // Clear old markers
     reportMarkers.clearLayers();
 
+    // Detect crisis clusters for highlight
+    const crisisIds = detectCrisisClusters(reports);
+
     // Render list & map markers
     listEl.innerHTML = reports.map((r, i) => {
       const emoji = getTypeEmoji(r.type);
       const time  = formatTimeAgo(r.created_at);
+      const votes = r.upvotes || 0;
+      const voted = hasVoted(r.id);
+      const votedClass = voted ? 'voted' : '';
+      const votedLabel = voted ? '👍✓' : '👍';
       return `
         <div class="report-item" data-idx="${i}">
           <div class="report-icon">${emoji}</div>
@@ -231,6 +232,11 @@ async function loadReports() {
               <span>👤 ${escapeHtml(r.name)}</span>
               <span>⏱️ ${time}</span>
             </div>
+            <div class="report-actions">
+              <button class="btn-upvote ${votedClass}" onclick="handleUpvote('${r.id}', this)" ${voted ? 'disabled' : ''} title="Validasi laporan ini">
+                ${votedLabel} <span class="vote-count">${votes}</span>
+              </button>
+            </div>
           </div>
           <button class="report-map-btn" onclick="flyToReport(${r.lat},${r.lng})" title="Lihat di peta">📍</button>
         </div>`;
@@ -239,19 +245,29 @@ async function loadReports() {
     // Add markers to map
     reports.forEach((r) => {
       const emoji = getTypeEmoji(r.type);
+      const isCrisis = crisisIds.has(r.id);
+      const markerClass = isCrisis ? 'crisis-marker' : '';
+      const markerHtml = isCrisis
+        ? `<div class="crisis-marker" style="font-size:1.3rem;text-align:center;line-height:1;filter:drop-shadow(0 0 4px rgba(230,57,70,.8))">${emoji}</div>`
+        : `<div style="font-size:1.1rem;text-align:center;line-height:1;filter:drop-shadow(0 1px 2px rgba(0,0,0,.3))">${emoji}</div>`;
+
       const m = L.marker([r.lat, r.lng], {
         icon: L.divIcon({
-          className: '',
-          html: `<div style="font-size:1.1rem;text-align:center;line-height:1;filter:drop-shadow(0 1px 2px rgba(0,0,0,.3))">${emoji}</div>`,
-          iconSize: [22, 22],
-          iconAnchor: [11, 11],
+          className: markerClass,
+          html: markerHtml,
+          iconSize: isCrisis ? [28, 28] : [22, 22],
+          iconAnchor: isCrisis ? [14, 14] : [11, 11],
+          zIndexOffset: isCrisis ? 1000 : 0,
         }),
       });
+
+      const upvoteInfo = (r.upvotes || 0) > 0 ? `<br><span style="font-size:.72rem;color:var(--orange)">👍 ${r.upvotes} validasi</span>` : '';
       m.bindPopup(`
         <div style="font-size:.82rem;line-height:1.5;min-width:160px">
           <strong>${escapeHtml(r.type)}</strong><br>
           <span style="color:#6e6e73">${escapeHtml(r.description)}</span><br>
           <span style="font-size:.72rem;color:#999">👤 ${escapeHtml(r.name)} · ${formatTimeAgo(r.created_at)}</span>
+          ${upvoteInfo}
         </div>
       `);
       reportMarkers.addLayer(m);
@@ -859,6 +875,184 @@ function escapeMarkdown(text) {
 }
 
 /* ═══════════════════════════════════════════
+   v1.7.0 — UPVOTE / VALIDASI
+   ═══════════════════════════════════════════ */
+const UPVOTE_KEY = 'laporbencana_upvoted';
+
+/** Check if user already voted for this report */
+function hasVoted(reportId) {
+  const voted = JSON.parse(localStorage.getItem(UPVOTE_KEY) || '[]');
+  return voted.includes(reportId);
+}
+
+/** Record vote locally */
+function recordVote(reportId) {
+  const voted = JSON.parse(localStorage.getItem(UPVOTE_KEY) || '[]');
+  voted.push(reportId);
+  localStorage.setItem(UPVOTE_KEY, JSON.stringify(voted));
+}
+
+/** Handle upvote click */
+async function handleUpvote(reportId, btnEl) {
+  if (hasVoted(reportId)) return;
+
+  // Optimistic UI update
+  const countEl = btnEl.querySelector('.vote-count');
+  const currentCount = parseInt(countEl.textContent, 10) || 0;
+  countEl.textContent = currentCount + 1;
+  btnEl.classList.add('voted');
+  btnEl.disabled = true;
+  btnEl.innerHTML = '👍✓ <span class="vote-count">' + (currentCount + 1) + '</span>';
+
+  try {
+    // Increment upvotes in Supabase
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/reports?id=eq.${reportId}`, {
+      method: 'PATCH',
+      headers: {
+        ...SB_HEADERS,
+        'Content-Type': 'application/json',
+        Prefer: 'return=representation',
+      },
+      body: JSON.stringify({
+        upvotes: currentCount + 1,
+      }),
+    });
+
+    if (!res.ok) {
+      // Rollback UI on failure
+      countEl.textContent = currentCount;
+      btnEl.classList.remove('voted');
+      btnEl.disabled = false;
+      btnEl.innerHTML = '👍 <span class="vote-count">' + currentCount + '</span>';
+      showToast('⚠️', 'Gagal', 'Tidak bisa menyimpan validasi. Coba lagi.');
+      return;
+    }
+
+    recordVote(reportId);
+    console.info('[LaporBencana] Upvote berhasil untuk report:', reportId);
+  } catch (e) {
+    // Rollback on network error
+    countEl.textContent = currentCount;
+    btnEl.classList.remove('voted');
+    btnEl.disabled = false;
+    btnEl.innerHTML = '👍 <span class="vote-count">' + currentCount + '</span>';
+    showToast('⚠️', 'Gagal', 'Koneksi bermasalah. Coba lagi.');
+  }
+}
+
+/* ═══════════════════════════════════════════
+   v1.7.0 — CRISIS CLUSTER DETECTION
+   ═══════════════════════════════════════════ */
+
+/** Haversine distance in meters between two coordinates */
+function haversineDistance(lat1, lng1, lat2, lng2) {
+  const R = 6371000; // Earth radius in meters
+  const toRad = (d) => (d * Math.PI) / 180;
+  const dLat = toRad(lat2 - lat1);
+  const dLng = toRad(lng2 - lng1);
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLng / 2) ** 2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
+/** Detect crisis clusters: reports within 50m of each other OR high upvotes */
+function detectCrisisClusters(reports) {
+  const crisisIds = new Set();
+  const CLUSTER_RADIUS = 50;   // meters
+  const HIGH_UPVOTE    = 3;    // threshold for "high" upvote
+
+  for (let i = 0; i < reports.length; i++) {
+    // High upvote = crisis
+    if ((reports[i].upvotes || 0) >= HIGH_UPVOTE) {
+      crisisIds.add(reports[i].id);
+    }
+
+    // Cluster detection
+    for (let j = i + 1; j < reports.length; j++) {
+      const dist = haversineDistance(
+        reports[i].lat, reports[i].lng,
+        reports[j].lat, reports[j].lng,
+      );
+      if (dist < CLUSTER_RADIUS) {
+        crisisIds.add(reports[i].id);
+        crisisIds.add(reports[j].id);
+      }
+    }
+  }
+
+  return crisisIds;
+}
+
+/* ═══════════════════════════════════════════
+   v1.7.0 — MAP FULLSCREEN
+   ═══════════════════════════════════════════ */
+let mapExpanded = false;
+
+function setupMapFullscreen() {
+  const btn = document.getElementById('btnMapExpand');
+  const wrapper = document.getElementById('mapWrapper');
+
+  btn.addEventListener('click', () => {
+    mapExpanded = !mapExpanded;
+    if (mapExpanded) {
+      wrapper.classList.add('map-expanded');
+      btn.textContent = '✕';
+      btn.title = 'Tutup Peta';
+      document.body.style.overflow = 'hidden';
+    } else {
+      wrapper.classList.remove('map-expanded');
+      btn.textContent = '⛶';
+      btn.title = 'Perbesar Peta';
+      document.body.style.overflow = '';
+    }
+    // Invalidate map size after transition
+    setTimeout(() => map.invalidateSize(), 300);
+  });
+
+  // Close expanded map when clicking the bottom bar
+  wrapper.addEventListener('click', (e) => {
+    if (mapExpanded && e.target === wrapper.querySelector('::after')) {
+      btn.click();
+    }
+  });
+}
+
+/* ═══════════════════════════════════════════
+   v1.7.0 — DARK MODE
+   ═══════════════════════════════════════════ */
+const DARK_KEY = 'laporbencana_darkmode';
+
+function setupDarkMode() {
+  const btn = document.getElementById('btnDarkToggle');
+  const icon = btn.querySelector('.dark-icon');
+
+  // Load saved preference
+  const saved = localStorage.getItem(DARK_KEY);
+  if (saved === 'true') {
+    document.body.classList.add('dark');
+    icon.textContent = '☀️';
+  }
+
+  btn.addEventListener('click', () => {
+    const isDark = document.body.classList.toggle('dark');
+    icon.textContent = isDark ? '☀️' : '🌙';
+    localStorage.setItem(DARK_KEY, isDark);
+  });
+}
+
+/* ═══════════════════════════════════════════
+   v1.7.0 — FAB REFRESH
+   ═══════════════════════════════════════════ */
+function setupFabRefresh() {
+  const fab = document.getElementById('btnFabRefresh');
+  fab.addEventListener('click', () => {
+    fab.classList.add('spinning');
+    setTimeout(() => window.location.reload(true), 400);
+  });
+}
+
+/* ═══════════════════════════════════════════
    TOAST — Notification System
    ═══════════════════════════════════════════ */
 function showToast(icon, title, msg) {
@@ -904,6 +1098,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Media upload (optional photo/video)
   setupMediaUpload();
+
+  // v1.7.0 features
+  setupDarkMode();
+  setupMapFullscreen();
+  setupFabRefresh();
 
   // Show logo bar only if real logos exist
   const logoBar = document.querySelector('.logo-bar');
