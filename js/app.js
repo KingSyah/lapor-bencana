@@ -1048,7 +1048,39 @@ function setupFabRefresh() {
   const fab = document.getElementById('btnFabRefresh');
   fab.addEventListener('click', () => {
     fab.classList.add('spinning');
-    setTimeout(() => window.location.reload(true), 400);
+    // Local refresh: reload reports + reinit map, bukan full page reload
+    loadReports();
+    setTimeout(() => fab.classList.remove('spinning'), 600);
+  });
+}
+
+/* ═══════════════════════════════════════════
+   v1.7.0 — EMERGENCY NUMBERS TAB
+   ═══════════════════════════════════════════ */
+function setupEmergencyTab() {
+  const trigger = document.getElementById('emergencyTrigger');
+  const panel   = document.getElementById('emergencyPanel');
+
+  trigger.addEventListener('click', (e) => {
+    e.stopPropagation();
+    const isOpen = panel.classList.toggle('show');
+    trigger.classList.toggle('active', isOpen);
+  });
+
+  // Close when clicking outside
+  document.addEventListener('click', (e) => {
+    if (!panel.contains(e.target) && e.target !== trigger) {
+      panel.classList.remove('show');
+      trigger.classList.remove('active');
+    }
+  });
+
+  // Close when clicking a link (dial a number)
+  panel.querySelectorAll('.emergency-item').forEach((item) => {
+    item.addEventListener('click', () => {
+      panel.classList.remove('show');
+      trigger.classList.remove('active');
+    });
   });
 }
 
@@ -1103,6 +1135,7 @@ document.addEventListener('DOMContentLoaded', () => {
   setupDarkMode();
   setupMapFullscreen();
   setupFabRefresh();
+  setupEmergencyTab();
 
   // Show logo bar only if real logos exist
   const logoBar = document.querySelector('.logo-bar');
