@@ -31,6 +31,9 @@
 
   <!-- ═══ Header ═══ -->
   <header class="header">
+    <button class="btn-dark-toggle" id="btnDarkToggle" title="Mode Malam">
+      <span class="dark-icon">🌙</span>
+    </button>
     <span class="header-icon">🚨</span>
     <h1>LAPOR BENCANA</h1>
     <p>Sampaikan laporanmu — bantu petugas bertindak cepat</p>
@@ -117,7 +120,10 @@
     <section class="card">
       <div class="card-title"><span class="icon">📍</span> Lokasi Bencana</div>
       <p class="map-hint">Geser marker 📌 ke lokasi bencana, atau gunakan GPS.</p>
-      <div id="map"></div>
+      <div class="map-wrapper" id="mapWrapper">
+        <div id="map"></div>
+        <button class="btn-map-expand" id="btnMapExpand" title="Perbesar Peta">⛶</button>
+      </div>
       <div class="map-actions">
         <button class="btn-ghost" id="btnGps">📡 Gunakan Lokasi Saya</button>
         <button class="btn-ghost" id="btnReset">🔄 Reset Peta</button>
@@ -207,6 +213,9 @@
       </div>
     </div>
   </div>
+
+  <!-- ═══ Floating Action Button (Hard Refresh) ═══ -->
+  <button class="fab-refresh" id="btnFabRefresh" title="Refresh Data">🔄</button>
 
   <!-- Leaflet JS -->
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
