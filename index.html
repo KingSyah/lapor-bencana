@@ -126,9 +126,35 @@
       </div>
       <div class="map-actions">
         <button class="btn-ghost" id="btnGps">📡 Gunakan Lokasi Saya</button>
-        <button class="btn-ghost" id="btnReset">🔄 Reset Peta</button>
+        <button class="btn-ghost btn-reset-map" id="btnReset">🔄 Reset Peta</button>
       </div>
       <div class="coord-badge" id="coordBadge">Koordinat: 4.47000, 97.94000 (Kota Langsa)</div>
+      <!-- Nomor Darurat (inline, bukan floating) -->
+      <div class="emergency-bar" id="emergencyBar">
+        <button class="btn-emergency" id="btnEmergency">📞 Nomor Penting</button>
+        <div class="emergency-dropdown" id="emergencyPanel">
+          <a href="tel:112" class="emergency-item">
+            <span class="emergency-icon">🆘</span>
+            <span class="emergency-info"><strong>112</strong> — Darurat Nasional</span>
+          </a>
+          <a href="tel:115" class="emergency-item">
+            <span class="emergency-icon">🚁</span>
+            <span class="emergency-info"><strong>115</strong> — Basarnas / SAR</span>
+          </a>
+          <a href="tel:119" class="emergency-item">
+            <span class="emergency-icon">🚑</span>
+            <span class="emergency-info"><strong>119</strong> — Ambulans</span>
+          </a>
+          <a href="tel:113" class="emergency-item">
+            <span class="emergency-icon">🔥</span>
+            <span class="emergency-info"><strong>113</strong> — Pemadam Kebakaran</span>
+          </a>
+          <a href="tel:110" class="emergency-item">
+            <span class="emergency-icon">🚔</span>
+            <span class="emergency-info"><strong>110</strong> — Kepolisian</span>
+          </a>
+        </div>
+      </div>
     </section>
 
     <!-- Lampiran (Opsional) -->
@@ -211,34 +237,6 @@
         </svg>
         <span class="label" id="cooldownLabel">60</span>
       </div>
-    </div>
-  </div>
-
-  <!-- ═══ Emergency Numbers (collapsible tab) ═══ -->
-  <div class="emergency-tab" id="emergencyTab">
-    <button class="emergency-trigger" id="emergencyTrigger" title="Nomor Darurat">🚨</button>
-    <div class="emergency-panel" id="emergencyPanel">
-      <div class="emergency-header">Nomor Darurat</div>
-      <a href="tel:112" class="emergency-item">
-        <span class="emergency-icon">🆘</span>
-        <span class="emergency-info"><strong>112</strong> — Darurat Nasional</span>
-      </a>
-      <a href="tel:115" class="emergency-item">
-        <span class="emergency-icon">🚁</span>
-        <span class="emergency-info"><strong>115</strong> — Basarnas / SAR</span>
-      </a>
-      <a href="tel:119" class="emergency-item">
-        <span class="emergency-icon">🚑</span>
-        <span class="emergency-info"><strong>119</strong> — Ambulans</span>
-      </a>
-      <a href="tel:113" class="emergency-item">
-        <span class="emergency-icon">🔥</span>
-        <span class="emergency-info"><strong>113</strong> — Pemadam Kebakaran</span>
-      </a>
-      <a href="tel:110" class="emergency-item">
-        <span class="emergency-icon">🚔</span>
-        <span class="emergency-info"><strong>110</strong> — Kepolisian</span>
-      </a>
     </div>
   </div>
 
