@@ -671,13 +671,15 @@ body.dark .btn-map-expand{background:var(--card);border-color:var(--border);colo
 .btn-upvote .vote-count{font-family:'SF Mono',Menlo,monospace}
 
 /* ═══ 3. Highlight Crisis Markers ═══ */
-@keyframes pulse-crisis{
-  0%,100%{transform:scale(1);opacity:1}
-  50%{transform:scale(1.3);opacity:.7}
+@keyframes crisis-glow{
+  0%,100%{filter:drop-shadow(0 0 3px rgba(230,57,70,.5))}
+  50%{filter:drop-shadow(0 0 8px rgba(230,57,70,.9))}
 }
 .crisis-marker{
-  animation:pulse-crisis 1.2s ease-in-out infinite;
-  filter:drop-shadow(0 0 6px rgba(230,57,70,.6)) !important;
+  animation:crisis-glow 2s ease-in-out infinite;
+}
+.crisis-zone-circle{
+  pointer-events:none;
 }
 
 /* ═══ 7. Refresh Bar (above Informasi Pelapor) ═══ */
