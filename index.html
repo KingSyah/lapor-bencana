@@ -1,725 +1,254 @@
-/* ═══════════════════════════════════════════
-   LAPOR BENCANA — style.css
-   ═══════════════════════════════════════════ */
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Website Pelaporan Bencana — Laporkan bencana secara cepat dan akurat.">
+  <title>LAPOR BENCANA — Pelaporan Darurat</title>
 
-/* ── Reset & Tokens ── */
-*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+  <!-- Favicon -->
+  <link rel="icon" type="image/png" href="assets/favicon.svg">
+  <link rel="apple-touch-icon" href="assets/icons/icon-192x192.png">
 
-:root{
-  --white:#ffffff;--bg:#f5f5f7;--card:#ffffff;
-  --text:#1d1d1f;--muted:#6e6e73;--border:#d2d2d7;
-  --orange:#ff6b35;--red:#e63946;
-  --accent2:#ff8c5a;--green:#34c759;
-  --telegram:#229ED9;--telegram-dark:#1a7bb8;
-  --orange-glow:rgba(255,107,53,.25);
-  --radius:14px;--shadow:0 2px 16px rgba(0,0,0,.07);
-}
+  <!-- PWA Manifest -->
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#ff6b35">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Lapor Bencana">
 
-html{font-size:16px;scroll-behavior:smooth}
+  <!-- Leaflet CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 
-body{
-  font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Oxygen,Ubuntu,sans-serif;
-  background:var(--bg);color:var(--text);line-height:1.6;
-  min-height:100dvh;display:flex;flex-direction:column;align-items:center;
-}
+  <!-- browser-image-compression -->
+  <script src="https://unpkg.com/browser-image-compression@2.0.2/dist/browser-image-compression.js"></script>
 
-/* ═══ Logo / Partner Bar ═══ */
-.logo-bar{
-  width:100%;background:var(--white);
-  border-bottom:1px solid var(--border);
-  padding:.75rem 1.25rem;
-  box-shadow:0 1px 6px rgba(0,0,0,.04);
-  position:relative;z-index:1;
-  margin-top:-28px;
-  border-radius:16px 16px 0 0;
-  display:none;
-}
-.logo-bar.visible{display:block}
-.logo-bar-inner{
-  max-width:720px;margin:0 auto;
-  display:flex;align-items:center;gap:1rem;
-}
-.logo-bar-label{
-  font-size:.7rem;font-weight:700;text-transform:uppercase;
-  letter-spacing:1px;color:var(--muted);
-  white-space:nowrap;flex-shrink:0;
-}
-.logo-track{
-  display:flex;align-items:center;gap:.75rem;
-  overflow-x:auto;flex:1;
-  scrollbar-width:none;-ms-overflow-style:none;
-  padding:.25rem 0;
-}
-.logo-track::-webkit-scrollbar{display:none}
+  <!-- App CSS -->
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
 
-.logo-slot{
-  width:48px;height:48px;min-width:48px;
-  border-radius:10px;
-  border:1.5px dashed var(--border);
-  background:var(--bg);
-  display:flex;align-items:center;justify-content:center;
-  transition:border-color .2s,background .2s;
-  cursor:default;
-}
-.logo-slot:hover{
-  border-color:var(--orange);background:rgba(255,107,53,.04);
-}
-.logo-placeholder{
-  font-size:1.1rem;color:var(--border);font-weight:300;
-  line-height:1;
-}
+  <!-- ═══ Header ═══ -->
+  <header class="header">
+    <button class="btn-dark-toggle" id="btnDarkToggle" title="Mode Malam">
+      <span class="dark-icon">🌙</span>
+    </button>
+    <span class="header-icon">🚨</span>
+    <h1>LAPOR BENCANA</h1>
+    <p>Sampaikan laporanmu — bantu petugas bertindak cepat</p>
+    <a href="https://t.me/+uEUxezVG69g2OWM1" target="_blank" rel="noopener noreferrer" class="btn-join-telegram">
+      <svg class="tg-icon" viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M11.994 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm4.532 7.35l-1.6 7.534c-.12.537-.432.667-.873.414l-2.41-1.774-1.164 1.123c-.129.129-.238.238-.487.238l.173-2.462 4.488-4.056c.195-.173-.043-.27-.303-.097l-5.54 3.485-2.388-.746c-.517-.162-.53-.517.108-.766l9.335-3.598c.432-.16.81.097.668.766z"/></svg>
+      <span>Join Group Telegram</span>
+      <span class="join-arrow">→</span>
+    </a>
+  </header>
 
-/* When a real logo is placed */
-.logo-item{
-  width:48px;height:48px;min-width:48px;
-  border-radius:10px;
-  border:1.5px solid var(--border);
-  background:var(--white);
-  display:flex;align-items:center;justify-content:center;
-  overflow:hidden;transition:border-color .2s,transform .15s;
-  text-decoration:none;
-}
-.logo-item:hover{
-  border-color:var(--orange);transform:scale(1.08);
-}
-.logo-item img{
-  width:100%;height:100%;object-fit:contain;
-  padding:6px;
-}
+  <!-- ═══ Logo / Partner Bar ═══ -->
+  <div class="logo-bar">
+    <div class="logo-bar-inner">
+      <span class="logo-bar-label">Didukung oleh</span>
+      <div class="logo-track" id="logoTrack">
+        <!--
+          ⬇️ Tambahkan logo di sini saat diperlukan.
+          Contoh:
+          <a href="https://example.com" target="_blank" class="logo-item">
+            <img src="assets/logos/partner1.png" alt="Partner 1">
+          </a>
+        -->
+        <div class="logo-slot" title="Logo 1 — klik untuk tambah">
+          <span class="logo-placeholder">+</span>
+        </div>
+        <div class="logo-slot" title="Logo 2 — klik untuk tambah">
+          <span class="logo-placeholder">+</span>
+        </div>
+        <div class="logo-slot" title="Logo 3 — klik untuk tambah">
+          <span class="logo-placeholder">+</span>
+        </div>
+        <div class="logo-slot" title="Logo 4 — klik untuk tambah">
+          <span class="logo-placeholder">+</span>
+        </div>
+        <div class="logo-slot" title="Logo 5 — klik untuk tambah">
+          <span class="logo-placeholder">+</span>
+        </div>
+        <div class="logo-slot" title="Logo 6 — klik untuk tambah">
+          <span class="logo-placeholder">+</span>
+        </div>
+      </div>
+    </div>
+  </div>
 
-@media(min-width:560px){
-  .logo-slot,.logo-item{width:52px;height:52px;min-width:52px}
-}
+  <!-- ═══ Main Content ═══ -->
+  <main class="container">
 
-/* ── Header ── */
-.header{
-  width:100%;background:linear-gradient(135deg,var(--orange),var(--red));
-  color:var(--white);text-align:center;
-  padding:2rem 1.25rem 3rem;
-  position:relative;
-}
-.header::after{
-  content:'';position:absolute;bottom:-1px;left:0;right:0;
-  height:32px;background:var(--bg);
-  border-radius:24px 24px 0 0;
-}
-.header-icon{
-  font-size:2.2rem;display:block;margin-bottom:.5rem;
-  filter:drop-shadow(0 2px 4px rgba(0,0,0,.15));
-}
-.header h1{
-  font-size:1.65rem;font-weight:800;letter-spacing:.8px;
-  text-shadow:0 1px 3px rgba(0,0,0,.12);
-  margin-bottom:.2rem;
-}
-.header p{
-  font-size:.82rem;opacity:.88;font-weight:400;
-  letter-spacing:.2px;margin-bottom:1rem;
-}
+    <!-- Honeypot — hidden from humans, filled by bots -->
+    <div class="hp-wrap" aria-hidden="true">
+      <label for="hp_website">Website</label>
+      <input type="text" id="hp_website" name="website" tabindex="-1" autocomplete="off">
+    </div>
 
-/* ── Join Telegram Button ── */
-.btn-join-telegram{
-  display:inline-flex;align-items:center;gap:.5rem;
-  padding:.6rem 1.4rem;
-  background:var(--white);color:var(--telegram);
-  border:none;border-radius:50px;
-  font-size:.82rem;font-weight:700;
-  text-decoration:none;
-  cursor:pointer;transition:all .25s;
-  box-shadow:0 4px 14px rgba(0,0,0,.15);
-  position:relative;z-index:1;
-}
-.btn-join-telegram:hover{
-  background:var(--telegram);color:var(--white);
-  transform:translateY(-2px);
-  box-shadow:0 6px 20px rgba(34,158,217,.35);
-}
-.btn-join-telegram:active{transform:translateY(0)}
-.tg-icon{flex-shrink:0;transition:transform .2s}
-.btn-join-telegram:hover .tg-icon{transform:scale(1.15)}
-.join-arrow{
-  font-size:.9rem;transition:transform .2s;
-}
-.btn-join-telegram:hover .join-arrow{transform:translateX(3px)}
+    <!-- Reset Form (small, unobtrusive) -->
+    <button class="btn-reset-form" id="btnReset" type="button">🔄 Reset Semua</button>
 
-/* ── Container ── */
-.container{
-  width:100%;max-width:520px;padding:1.5rem 1.25rem;
-  position:relative;z-index:1;
-}
+    <!-- Info Pelapor -->
+    <section class="card">
+      <div class="card-title"><span class="icon">👤</span> Informasi Pelapor</div>
+      <div class="form-group">
+        <label for="nama">Nama Lengkap</label>
+        <input type="text" id="nama" placeholder="Contoh: Ahmad Rizki" required>
+      </div>
+      <div class="form-group">
+        <label for="jenis">Jenis Bencana</label>
+        <select id="jenis" required>
+          <option value="" disabled selected>Pilih jenis bencana…</option>
+          <option value="🌊 Banjir">🌊 Banjir</option>
+          <option value="🔥 Kebakaran">🔥 Kebakaran</option>
+          <option value="🏔️ Gempa Bumi">🏔️ Gempa Bumi</option>
+          <option value="🌋 Gunung Meletus">🌋 Gunung Meletus</option>
+          <option value="🌊 Tsunami">🌊 Tsunami</option>
+          <option value="🌪️ Angin Puting Beliung">🌪️ Angin Puting Beliung</option>
+          <option value="⛰️ Tanah Longsor">⛰️ Tanah Longsor</option>
+          <option value="🌡️ Kemarau / Kekeringan">🌡️ Kemarau / Kekeringan</option>
+          <option value="⚡ Lainnya">⚡ Lainnya</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label for="deskripsi">Deskripsi Keadaan <span class="char-hint" id="charHint">(min. 20 karakter)</span></label>
+        <textarea id="deskripsi" placeholder="Jelaskan situasi bencana, korban, kerusakan, dll." required></textarea>
+        <div class="char-counter" id="charCounter">0 / 20</div>
+      </div>
+    </section>
 
-/* ── Card ── */
-.card{
-  background:var(--card);border-radius:var(--radius);
-  box-shadow:var(--shadow);padding:1.4rem 1.5rem;margin-bottom:1rem;
-}
-.card-title{
-  font-size:.75rem;font-weight:700;text-transform:uppercase;
-  letter-spacing:1.2px;color:var(--muted);margin-bottom:1.1rem;
-  padding-bottom:.65rem;
-  border-bottom:1px solid var(--border);
-  display:flex;align-items:center;gap:.45rem;
-}
-.card-title .icon{font-size:.95rem}
+    <!-- Lokasi -->
+    <section class="card">
+      <div class="card-title"><span class="icon">📍</span> Lokasi Bencana</div>
+      <p class="map-hint">Geser marker 📌 ke lokasi bencana, atau gunakan GPS.</p>
+      <div class="map-wrapper" id="mapWrapper">
+        <div id="map"></div>
+        <button class="btn-map-expand" id="btnMapExpand" title="Perbesar Peta">⛶</button>
+      </div>
+      <div class="map-actions">
+        <button class="btn-ghost" id="btnGps">📡 Gunakan Lokasi Saya</button>
+      </div>
+      <div class="coord-badge" id="coordBadge">Koordinat: 4.47000, 97.94000 (Kota Langsa)</div>
+      <!-- Nomor Darurat (inline, bukan floating) -->
+      <div class="emergency-bar" id="emergencyBar">
+        <button class="btn-emergency" id="btnEmergency">📞 Nomor Penting</button>
+        <div class="emergency-dropdown" id="emergencyPanel">
+          <a href="tel:112" class="emergency-item">
+            <span class="emergency-icon">🆘</span>
+            <span class="emergency-info"><strong>112</strong> — Darurat Nasional</span>
+          </a>
+          <a href="tel:115" class="emergency-item">
+            <span class="emergency-icon">🚁</span>
+            <span class="emergency-info"><strong>115</strong> — Basarnas / SAR</span>
+          </a>
+          <a href="tel:119" class="emergency-item">
+            <span class="emergency-icon">🚑</span>
+            <span class="emergency-info"><strong>119</strong> — Ambulans</span>
+          </a>
+          <a href="tel:113" class="emergency-item">
+            <span class="emergency-icon">🔥</span>
+            <span class="emergency-info"><strong>113</strong> — Pemadam Kebakaran</span>
+          </a>
+          <a href="tel:110" class="emergency-item">
+            <span class="emergency-icon">🚔</span>
+            <span class="emergency-info"><strong>110</strong> — Kepolisian</span>
+          </a>
+        </div>
+      </div>
+    </section>
 
-/* ── Form ── */
-label{display:block;font-size:.8rem;font-weight:600;color:var(--muted);margin-bottom:.35rem}
+    <!-- Lampiran (Opsional) -->
+    <section class="card card-attach">
+      <div class="card-title"><span class="icon">📎</span> Lampiran <span class="optional-badge">Opsional</span></div>
+      <input type="file" id="mediaInput" accept="image/*,video/*" hidden>
+      <div class="upload-zone" id="uploadZone">
+        <div class="upload-placeholder" id="uploadPlaceholder">
+          <span class="upload-icon">📷</span>
+          <span class="upload-text">Tambah foto / video</span>
+          <span class="upload-hint">Maks 10 MB foto · 50 MB video</span>
+        </div>
+        <div class="upload-preview" id="uploadPreview" style="display:none">
+          <img id="previewImg" src="" alt="Preview">
+          <video id="previewVideo" src="" muted loop></video>
+          <div class="upload-file-info" id="uploadFileInfo"></div>
+          <button class="upload-remove" id="uploadRemove" title="Hapus">✕</button>
+        </div>
+      </div>
+      <div class="upload-progress" id="uploadProgress" style="display:none">
+        <div class="upload-progress-bar" id="uploadProgressBar"></div>
+      </div>
+      <div class="compress-option">
+        <label class="checkbox-wrap" for="compressCheck">
+          <input type="checkbox" id="compressCheck">
+          <span class="checkmark"></span>
+          <span class="checkbox-label">🗜️ Kompres foto sebelum kirim <span class="compress-hint">(aktifkan jika koneksi lambat)</span></span>
+        </label>
+        <div class="compress-status" id="compressStatus" style="display:none"></div>
+      </div>
+    </section>
 
-input[type="text"],select,textarea{
-  width:100%;padding:.7rem .85rem;border:1.5px solid var(--border);
-  border-radius:10px;font-size:.95rem;
-  background-color:var(--bg);
-  color:var(--text);transition:border .2s,box-shadow .2s;outline:none;
-  font-family:inherit;
-}
-input:focus,select:focus,textarea:focus{
-  border-color:var(--orange);box-shadow:0 0 0 3px var(--orange-glow);
-}
-textarea{resize:vertical;min-height:90px}
+    <!-- Submit -->
+    <button class="btn-submit" id="btnSubmit">
+      <span class="spinner" id="spinner"></span>
+      <span id="btnText">🚨 Kirim Laporan Darurat</span>
+    </button>
 
-select{
-  appearance:none;-webkit-appearance:none;
-  padding-right:2.2rem;
-  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%236e6e73' viewBox='0 0 16 16'%3E%3Cpath d='M1.5 5.5l6.5 6 6.5-6'/%3E%3C/svg%3E");
-  background-repeat:no-repeat;
-  background-position:right .85rem center;
-  background-size:12px 12px;
-}
-.form-group{margin-bottom:1rem}
+    <!-- Laporan Terbaru -->
+    <section class="card" id="reportsCard" style="display:none">
+      <div class="card-title"><span class="icon">📋</span> Laporan Terbaru</div>
+      <div class="reports-actions">
+        <button class="btn-ghost btn-sm" id="btnRefresh">🔄 Muat Ulang</button>
+        <span class="reports-count" id="reportsCount"></span>
+      </div>
+      <div id="reportsList"></div>
+    </section>
 
-/* ── Honeypot (invisible to humans) ── */
-.hp-wrap{
-  position:absolute;left:-9999px;top:-9999px;
-  opacity:0;height:0;width:0;overflow:hidden;
-  pointer-events:none;
-}
+  </main>
 
-/* ── Character Counter ── */
-.char-hint{
-  font-weight:400;font-size:.72rem;
-  transition:color .2s;
-}
-.char-hint.ok{color:var(--green)}
-.char-hint.warn{color:var(--orange)}
+  <!-- ═══ Footer (styled from COPYRIGHT.md) ═══ -->
+  <footer class="footer">
+    <div class="footer-inner">
+      <span class="footer-crown">👑</span>
+      <span class="footer-text" id="copyright-text"></span>
+      <span class="footer-crown">👑</span>
+    </div>
+  </footer>
 
-.char-counter{
-  font-size:.7rem;color:var(--muted);margin-top:.25rem;
-  text-align:right;font-family:'SF Mono',Menlo,monospace;
-  transition:color .2s;
-}
-.char-counter.ok{color:var(--green)}
-.char-counter.warn{color:var(--orange)}
-.char-counter.bad{color:var(--red)}
+  <!-- ═══ Toast Notification ═══ -->
+  <div class="toast-overlay" id="toastOverlay">
+    <div class="toast-card">
+      <div class="toast-icon" id="toastIcon">✅</div>
+      <h3 id="toastTitle">Laporan Terkirim!</h3>
+      <p id="toastMsg">Petugas akan segera menindaklanjuti laporan Anda.</p>
+      <button class="toast-btn" id="toastClose">Tutup</button>
+    </div>
+  </div>
 
-/* ── Map ── */
-#map{
-  width:100%;height:260px;border-radius:12px;
-  border:1.5px solid var(--border);z-index:0;
-}
-.map-hint{
-  font-size:.78rem;color:var(--muted);margin-bottom:.75rem;
-}
-.map-actions{display:flex;gap:.5rem;margin-top:.75rem;flex-wrap:wrap}
+  <!-- ═══ Cooldown Overlay ═══ -->
+  <div class="cooldown-overlay" id="cooldownOverlay">
+    <div class="cooldown-card">
+      <div class="cooldown-icon">⏳</div>
+      <h3>Tunggu Sebentar</h3>
+      <p>Untuk mencegah spam, harap tunggu:</p>
+      <div class="cooldown-ring">
+        <svg viewBox="0 0 80 80">
+          <circle class="track" cx="40" cy="40" r="35"/>
+          <circle class="progress" id="cooldownCircle" cx="40" cy="40" r="35"/>
+        </svg>
+        <span class="label" id="cooldownLabel">60</span>
+      </div>
+    </div>
+  </div>
 
-.btn-ghost{
-  flex:1;min-width:0;padding:.55rem .5rem;border:1.5px solid var(--border);
-  border-radius:10px;background:var(--white);font-size:.78rem;font-weight:600;
-  color:var(--text);cursor:pointer;transition:all .2s;
-  display:flex;align-items:center;justify-content:center;gap:.35rem;
-}
-.btn-ghost:hover{border-color:var(--orange);color:var(--orange)}
-.btn-ghost:disabled{opacity:.5;cursor:not-allowed}
+  <!-- ═══ Floating Action Button (Hard Refresh) ═══ -->
+  <button class="fab-refresh" id="btnFabRefresh" title="Refresh Data">🔄</button>
 
-.coord-badge{
-  margin-top:.5rem;font-size:.75rem;color:var(--muted);
-  background:var(--bg);padding:.4rem .7rem;border-radius:8px;
-  font-family:'SF Mono',Menlo,monospace;text-align:center;
-}
+  <!-- Leaflet JS -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
-/* ── Upload Zone ── */
-.card-attach{padding-bottom:1.25rem}
-.optional-badge{
-  font-size:.62rem;font-weight:600;text-transform:none;
-  letter-spacing:0;color:var(--muted);background:var(--bg);
-  padding:.15rem .5rem;border-radius:6px;margin-left:.35rem;
-  vertical-align:middle;
-}
-.upload-zone{
-  border:1.5px dashed var(--border);border-radius:12px;
-  padding:.85rem;cursor:pointer;transition:border-color .2s,background .2s;
-  position:relative;min-height:56px;
-  display:flex;align-items:center;justify-content:center;
-}
-.upload-zone:hover{border-color:var(--orange);background:rgba(255,107,53,.03)}
-.upload-zone.has-file{border-style:solid;border-color:var(--green)}
-
-.upload-placeholder{
-  display:flex;align-items:center;gap:.5rem;
-  font-size:.82rem;color:var(--muted);
-  flex-wrap:wrap;justify-content:center;
-}
-.upload-icon{font-size:1.2rem}
-.upload-text{font-weight:600;color:var(--text)}
-.upload-hint{font-size:.68rem;width:100%;text-align:center;margin-top:.1rem}
-
-.upload-preview{
-  position:relative;display:flex;align-items:center;gap:.75rem;
-  width:100%;
-}
-.upload-preview img,.upload-preview video{
-  width:56px;height:56px;object-fit:cover;border-radius:8px;flex-shrink:0;
-}
-.upload-file-info{
-  flex:1;min-width:0;
-  font-size:.75rem;color:var(--muted);
-  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
-}
-.upload-file-info strong{color:var(--text);display:block;font-size:.8rem}
-
-.upload-remove{
-  position:absolute;top:-6px;left:50px;
-  width:22px;height:22px;border-radius:50%;
-  border:none;background:var(--red);color:#fff;
-  font-size:.7rem;font-weight:700;cursor:pointer;
-  display:flex;align-items:center;justify-content:center;
-  box-shadow:0 1px 4px rgba(0,0,0,.2);
-  transition:transform .15s;
-}
-.upload-remove:hover{transform:scale(1.15)}
-
-.upload-progress{
-  margin-top:.5rem;height:4px;background:var(--bg);
-  border-radius:4px;overflow:hidden;
-}
-.upload-progress-bar{
-  height:100%;width:0%;background:linear-gradient(90deg,var(--orange),var(--red));
-  border-radius:4px;transition:width .3s;
-}
-
-/* ── Submit Button ── */
-.btn-submit{
-  width:100%;padding:.85rem;border:none;border-radius:12px;
-  background:linear-gradient(135deg,var(--orange),var(--red));
-  color:var(--white);font-size:1rem;font-weight:700;
-  cursor:pointer;transition:transform .15s,box-shadow .15s;
-  box-shadow:0 4px 14px var(--orange-glow);
-  display:flex;align-items:center;justify-content:center;gap:.5rem;
-}
-.btn-submit:hover{transform:translateY(-1px);box-shadow:0 6px 20px var(--orange-glow)}
-.btn-submit:active{transform:scale(.98)}
-.btn-submit:disabled{opacity:.6;cursor:not-allowed;transform:none}
-
-/* ── Spinner ── */
-.spinner{
-  width:20px;height:20px;border:2.5px solid rgba(255,255,255,.35);
-  border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite;
-  display:none;
-}
-@keyframes spin{to{transform:rotate(360deg)}}
-
-/* ── Reports List ── */
-.reports-actions{
-  display:flex;align-items:center;gap:.5rem;margin-bottom:.75rem;
-}
-.btn-sm{font-size:.72rem !important;padding:.4rem .65rem !important}
-.reports-count{
-  font-size:.7rem;color:var(--muted);margin-left:auto;
-}
-
-.report-item{
-  display:flex;gap:.75rem;padding:.75rem 0;
-  border-bottom:1px solid var(--border);
-}
-.report-item:last-child{border-bottom:none}
-
-.report-icon{
-  width:36px;height:36px;border-radius:10px;
-  background:var(--bg);display:flex;align-items:center;justify-content:center;
-  font-size:1.1rem;flex-shrink:0;
-}
-.report-body{flex:1;min-width:0}
-.report-type{
-  font-size:.82rem;font-weight:700;color:var(--text);
-  display:flex;align-items:center;gap:.3rem;
-}
-.report-desc{
-  font-size:.75rem;color:var(--muted);margin-top:.15rem;
-  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
-}
-.report-meta{
-  display:flex;gap:.6rem;margin-top:.3rem;
-  font-size:.68rem;color:var(--muted);
-}
-.report-meta span{display:flex;align-items:center;gap:.2rem}
-
-.report-map-btn{
-  align-self:center;flex-shrink:0;
-  width:32px;height:32px;border-radius:8px;
-  border:1.5px solid var(--border);background:var(--white);
-  cursor:pointer;font-size:.85rem;
-  display:flex;align-items:center;justify-content:center;
-  transition:border-color .2s;
-}
-.report-map-btn:hover{border-color:var(--orange)}
-
-.report-empty{
-  text-align:center;padding:1.5rem 0;
-  font-size:.8rem;color:var(--muted);
-}
-.report-empty-icon{font-size:1.5rem;display:block;margin-bottom:.4rem}
-
-/* ═══ Footer (from COPYRIGHT.md style) ═══ */
-.footer{
-  width:100%;text-align:center;padding:1.75rem 1rem 1.25rem;
-  margin-top:auto;
-}
-.footer-inner{
-  display:inline-flex;align-items:center;gap:.6rem;
-  padding:.55rem 1.4rem;
-  border-radius:50px;
-  background:rgba(255,107,53,.06);
-  border:1px solid rgba(255,107,53,.15);
-  backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
-}
-.footer-crown{
-  font-size:1rem;
-  animation:crownBob 2s ease-in-out infinite;
-  display:inline-block;
-}
-.footer-crown:last-child{animation-delay:.3s}
-
-@keyframes crownBob{
-  0%,100%{transform:translateY(0) rotate(-5deg)}
-  50%{transform:translateY(-2px) rotate(5deg)}
-}
-
-.footer-text{
-  font-size:.78rem;font-weight:700;
-  background:linear-gradient(90deg,var(--orange),var(--red),#e91e63,#9c27b0,#2196f3,var(--green),var(--orange));
-  background-size:300% auto;
-  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
-  background-clip:text;color:transparent;
-  animation:shimmer 4s linear infinite;
-}
-@keyframes shimmer{
-  0%{background-position:0% center}
-  100%{background-position:300% center}
-}
-
-/* ── Toast Overlay ── */
-.toast-overlay{
-  position:fixed;inset:0;background:rgba(0,0,0,.35);
-  display:none;align-items:center;justify-content:center;z-index:9999;
-  backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);
-}
-.toast-overlay.show{display:flex}
-
-.toast-card{
-  background:var(--white);border-radius:20px;padding:2rem 1.75rem;
-  text-align:center;max-width:320px;width:90%;
-  box-shadow:0 20px 50px rgba(0,0,0,.15);
-  animation:popIn .35s cubic-bezier(.175,.885,.32,1.275);
-}
-@keyframes popIn{from{opacity:0;transform:scale(.8)}to{opacity:1;transform:scale(1)}}
-
-.toast-icon{font-size:3rem;margin-bottom:.75rem}
-.toast-card h3{font-size:1.15rem;margin-bottom:.35rem}
-.toast-card p{font-size:.85rem;color:var(--muted)}
-.toast-btn{
-  margin-top:1.25rem;padding:.6rem 2rem;border:none;border-radius:10px;
-  background:var(--orange);color:#fff;font-weight:700;font-size:.9rem;
-  cursor:pointer;transition:background .2s;
-}
-.toast-btn:hover{background:var(--red)}
-
-/* ── Leaflet popup fix ── */
-.leaflet-popup-content-wrapper{border-radius:12px !important}
-
-/* ── Responsive ── */
-@media(min-width:560px){
-  .header h1{font-size:1.8rem}
-  #map{height:320px}
-}
-
-/* ── Cooldown Overlay ── */
-.cooldown-overlay{
-  position:fixed;inset:0;background:rgba(0,0,0,.45);
-  display:none;align-items:center;justify-content:center;z-index:9998;
-  backdrop-filter:blur(5px);-webkit-backdrop-filter:blur(5px);
-}
-.cooldown-overlay.show{display:flex}
-
-.cooldown-card{
-  background:var(--white);border-radius:20px;padding:2rem;
-  text-align:center;max-width:300px;width:90%;
-  box-shadow:0 20px 50px rgba(0,0,0,.15);
-  animation:popIn .35s cubic-bezier(.175,.885,.32,1.275);
-}
-.cooldown-card .cooldown-icon{font-size:2.5rem;margin-bottom:.5rem}
-.cooldown-card h3{font-size:1rem;margin-bottom:.25rem}
-.cooldown-card p{font-size:.82rem;color:var(--muted);margin-bottom:.75rem}
-
-.cooldown-ring{
-  width:80px;height:80px;margin:0 auto;position:relative;
-}
-.cooldown-ring svg{
-  width:80px;height:80px;transform:rotate(-90deg);
-}
-.cooldown-ring circle{
-  fill:none;stroke-width:5;stroke-linecap:round;
-}
-.cooldown-ring .track{stroke:var(--border)}
-.cooldown-ring .progress{stroke:var(--orange);transition:stroke-dashoffset 1s linear}
-.cooldown-ring .label{
-  position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
-  font-size:1.4rem;font-weight:800;color:var(--text);
-}
-
-/* ═══ Compress Option ═══ */
-.compress-option{
-  margin-top:.75rem;
-  padding-top:.65rem;
-  border-top:1px solid var(--border);
-}
-.checkbox-wrap{
-  display:flex;align-items:flex-start;gap:.6rem;
-  cursor:pointer;position:relative;
-  margin-bottom:0;
-}
-.checkbox-wrap input[type="checkbox"]{
-  position:absolute;opacity:0;width:0;height:0;
-  pointer-events:none;
-}
-.checkmark{
-  width:20px;height:20px;min-width:20px;
-  border-radius:6px;border:1.5px solid var(--border);
-  background:var(--bg);
-  display:flex;align-items:center;justify-content:center;
-  transition:all .2s;margin-top:1px;
-}
-.checkmark::after{
-  content:'✓';font-size:.72rem;font-weight:700;
-  color:var(--white);opacity:0;transition:opacity .15s;
-}
-.checkbox-wrap input:checked ~ .checkmark{
-  background:var(--orange);border-color:var(--orange);
-}
-.checkbox-wrap input:checked ~ .checkmark::after{opacity:1}
-.checkbox-wrap:hover .checkmark{border-color:var(--orange)}
-.checkbox-label{
-  font-size:.78rem;color:var(--text);line-height:1.45;
-  font-weight:500;
-}
-.compress-hint{
-  font-size:.68rem;color:var(--muted);font-weight:400;
-}
-.compress-status{
-  margin-top:.5rem;font-size:.72rem;
-  padding:.4rem .7rem;border-radius:8px;
-  background:var(--bg);color:var(--muted);
-  display:flex;align-items:center;gap:.4rem;
-}
-.compress-status.success{color:var(--green)}
-.compress-status.compressing{color:var(--orange)}
-.compress-status.error{color:var(--red)}
-
-/* ═══════════════════════════════════════════
-   v1.7.0 — NEW FEATURES
-   ═══════════════════════════════════════════ */
-
-/* ═══ 6. Dark Mode Toggle ═══ */
-.btn-dark-toggle{
-  position:absolute;top:1rem;right:1rem;
-  width:36px;height:36px;border-radius:50%;
-  border:2px solid rgba(255,255,255,.35);
-  background:rgba(255,255,255,.15);
-  cursor:pointer;font-size:1.1rem;
-  display:flex;align-items:center;justify-content:center;
-  transition:background .2s,transform .2s;
-  z-index:2;backdrop-filter:blur(4px);
-}
-.btn-dark-toggle:hover{background:rgba(255,255,255,.3);transform:scale(1.1)}
-
-/* ═══ 6. Dark Mode Theme ═══ */
-body.dark{
-  --bg:#1a1a2e;--card:#16213e;
-  --text:#e0e0e0;--muted:#8892a4;
-  --border:#2a2a4a;
-  --shadow:0 2px 16px rgba(0,0,0,.3);
-}
-body.dark .header{
-  background:linear-gradient(135deg,#1a1a2e,#0f3460);
-}
-body.dark .header::after{background:var(--bg)}
-body.dark .btn-join-telegram{background:var(--card);color:var(--telegram)}
-body.dark .btn-join-telegram:hover{background:var(--telegram);color:#fff}
-body.dark .logo-bar{background:var(--card);border-color:var(--border)}
-body.dark .logo-slot{background:var(--bg);border-color:var(--border)}
-body.dark .logo-item{background:var(--card);border-color:var(--border)}
-body.dark input[type="text"],
-body.dark select,
-body.dark textarea{
-  background-color:var(--bg);color:var(--text);border-color:var(--border);
-}
-body.dark select{
-  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%238892a4' viewBox='0 0 16 16'%3E%3Cpath d='M1.5 5.5l6.5 6 6.5-6'/%3E%3C/svg%3E");
-}
-body.dark .btn-ghost{background:var(--card);color:var(--text);border-color:var(--border)}
-body.dark .btn-ghost:hover{border-color:var(--orange);color:var(--orange)}
-body.dark .btn-submit{box-shadow:0 4px 14px rgba(255,107,53,.3)}
-body.dark .toast-card,
-body.dark .cooldown-card{background:var(--card);box-shadow:0 20px 50px rgba(0,0,0,.4)}
-body.dark .toast-card p{color:var(--muted)}
-body.dark .cooldown-ring .track{stroke:var(--border)}
-body.dark .cooldown-ring .label{color:var(--text)}
-body.dark .footer-inner{background:rgba(255,107,53,.1);border-color:rgba(255,107,53,.25)}
-body.dark .checkmark{background:var(--bg);border-color:var(--border)}
-body.dark .checkbox-label{color:var(--text)}
-body.dark .upload-zone{border-color:var(--border)}
-body.dark .report-icon{background:var(--bg)}
-body.dark .report-map-btn{background:var(--card);border-color:var(--border);color:var(--text)}
-body.dark .leaflet-tile{filter:brightness(0.7) contrast(1.1) saturate(0.8)}
-
-/* ═══ 4. Map Expansion ═══ */
-.map-wrapper{position:relative}
-.btn-map-expand{
-  position:absolute;top:8px;right:8px;
-  width:32px;height:32px;border-radius:8px;
-  border:1.5px solid var(--border);background:var(--white);
-  cursor:pointer;font-size:1rem;z-index:10;
-  display:flex;align-items:center;justify-content:center;
-  transition:all .2s;box-shadow:0 2px 8px rgba(0,0,0,.12);
-}
-.btn-map-expand:hover{border-color:var(--orange);color:var(--orange)}
-body.dark .btn-map-expand{background:var(--card);border-color:var(--border);color:var(--text)}
-
-.map-wrapper.map-expanded{
-  position:fixed;inset:0;z-index:9997;
-  background:var(--bg);padding:0;
-}
-.map-wrapper.map-expanded #map{
-  width:100%;height:75vh;border-radius:0;border:none;
-  margin-top:0;
-}
-.map-wrapper.map-expanded .btn-map-expand{
-  position:fixed;top:12px;right:12px;z-index:9998;
-  background:var(--orange);color:#fff;border-color:var(--orange);
-  font-size:1.1rem;width:36px;height:36px;
-}
-.map-wrapper.map-expanded::after{
-  content:'✕ Tutup Peta';
-  position:fixed;bottom:0;left:0;right:0;
-  text-align:center;padding:1rem;
-  background:var(--card);
-  border-top:1px solid var(--border);
-  font-size:.85rem;font-weight:600;color:var(--muted);
-  cursor:pointer;z-index:9998;
-}
-@media(min-width:560px){
-  .map-wrapper.map-expanded #map{height:85vh}
-}
-
-/* ═══ 5. Better Spacing ═══ */
-.btn-submit{
-  margin-top:1.75rem;
-  margin-bottom:2.5rem;
-}
-
-/* ═══ 2. Upvote Button ═══ */
-.report-actions{
-  display:flex;align-items:center;gap:.5rem;margin-top:.4rem;
-}
-.btn-upvote{
-  display:inline-flex;align-items:center;gap:.3rem;
-  padding:.3rem .6rem;border-radius:8px;
-  border:1.5px solid var(--border);background:var(--bg);
-  font-size:.72rem;font-weight:600;color:var(--muted);
-  cursor:pointer;transition:all .2s;
-  user-select:none;
-}
-.btn-upvote:hover{border-color:var(--orange);color:var(--orange)}
-.btn-upvote.voted{
-  border-color:var(--orange);color:var(--orange);
-  background:rgba(255,107,53,.1);
-}
-.btn-upvote .vote-count{font-family:'SF Mono',Menlo,monospace}
-
-/* ═══ 3. Highlight Crisis Markers ═══ */
-@keyframes pulse-crisis{
-  0%,100%{transform:scale(1);opacity:1}
-  50%{transform:scale(1.3);opacity:.7}
-}
-.crisis-marker{
-  animation:pulse-crisis 1.2s ease-in-out infinite;
-  filter:drop-shadow(0 0 6px rgba(230,57,70,.6)) !important;
-}
-
-/* ═══ 7. FAB Refresh ═══ */
-.fab-refresh{
-  position:fixed;bottom:1.5rem;right:1.5rem;
-  width:48px;height:48px;border-radius:50%;
-  border:none;background:var(--orange);color:#fff;
-  font-size:1.2rem;cursor:pointer;z-index:9996;
-  box-shadow:0 4px 16px rgba(255,107,53,.4);
-  display:flex;align-items:center;justify-content:center;
-  transition:transform .2s,box-shadow .2s;
-}
-.fab-refresh:hover{transform:scale(1.1);box-shadow:0 6px 20px rgba(255,107,53,.5)}
-.fab-refresh:active{transform:scale(.95)}
-.fab-refresh.spinning{animation:spin .6s linear}
-body.dark .fab-refresh{background:var(--accent2);box-shadow:0 4px 16px rgba(255,140,90,.4)}
-
-/* ═══ Emergency Numbers (inline in map card) ═══ */
-.emergency-bar{
-  margin-top:.75rem;position:relative;
-}
-.btn-emergency{
-  width:100%;padding:.6rem 1rem;
-  border:1.5px solid var(--red);border-radius:10px;
-  background:rgba(230,57,70,.06);color:var(--red);
-  font-size:.82rem;font-weight:700;
-  cursor:pointer;transition:all .2s;
-  display:flex;align-items:center;justify-content:center;gap:.4rem;
-}
-.btn-emergency:hover{background:var(--red);color:#fff}
-.btn-emergency.active{background:var(--red);color:#fff;border-radius:10px 10px 0 0}
-
-.emergency-dropdown{
-  background:var(--card);border-radius:0 0 10px 10px;
-  border:1.5px solid var(--red);border-top:none;
-  overflow:hidden;
-  max-height:0;opacity:0;
-  transition:max-height .25s ease,opacity .2s;
-}
-.emergency-dropdown.show{
-  max-height:300px;opacity:1;
-}
-
-.emergency-item{
-  display:flex;align-items:center;gap:.6rem;
-  padding:.55rem 1rem;
-  text-decoration:none;color:var(--text);
-  transition:background .15s;
-  border-bottom:1px solid var(--border);
-}
-.emergency-item:last-child{border-bottom:none}
-.emergency-item:hover{background:rgba(255,107,53,.06)}
-.emergency-item:active{background:rgba(255,107,53,.12)}
-
-.emergency-icon{font-size:1.1rem;flex-shrink:0;width:24px;text-align:center}
-.emergency-info{font-size:.8rem;line-height:1.3}
-.emergency-info strong{
-  font-family:'SF Mono',Menlo,monospace;
-  font-size:.85rem;color:var(--red);
-}
-
-/* Reset map button — slightly more prominent */
-.btn-reset-map{
-  border-color:var(--muted) !important;
-}
-
-body.dark .emergency-dropdown{background:var(--card);border-color:var(--red)}
-body.dark .emergency-item:hover{background:rgba(230,57,70,.1)}
-body.dark .btn-emergency{background:rgba(230,57,70,.1);border-color:var(--red)}
-body.dark .btn-emergency:hover,
-body.dark .btn-emergency.active{background:var(--red);color:#fff}
+  <!-- App JS -->
+  <script src="js/app.js"></script>
+</body>
+</html>
