@@ -1,1145 +1,725 @@
 /* ═══════════════════════════════════════════
-   LAPOR BENCANA — app.js
+   LAPOR BENCANA — style.css
    ═══════════════════════════════════════════ */
 
-/* ── Service Worker Registration ── */
-if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker
-      .register('js/sw.js')
-      .then((reg) => console.info('[PWA] Service Worker registered:', reg.scope))
-      .catch((err) => console.warn('[PWA] Service Worker registration failed:', err));
-  });
+/* ── Reset & Tokens ── */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+
+:root{
+  --white:#ffffff;--bg:#f5f5f7;--card:#ffffff;
+  --text:#1d1d1f;--muted:#6e6e73;--border:#d2d2d7;
+  --orange:#ff6b35;--red:#e63946;
+  --accent2:#ff8c5a;--green:#34c759;
+  --telegram:#229ED9;--telegram-dark:#1a7bb8;
+  --orange-glow:rgba(255,107,53,.25);
+  --radius:14px;--shadow:0 2px 16px rgba(0,0,0,.07);
 }
 
-/* ── Config: Supabase ── */
-const SUPABASE_URL  = 'https://lfjajcxotlypisupiedi.supabase.co';
-const SUPABASE_ANON = 'sb_publishable_1bSLL_4J0acZA19IwYYnLw_q8DX0c5b';
+html{font-size:16px;scroll-behavior:smooth}
 
-/* ── Supabase Headers ── */
-const SB_HEADERS = {
-  apikey:        SUPABASE_ANON,
-  Authorization: `Bearer ${SUPABASE_ANON}`,
-  'Content-Type':'application/json',
-  Prefer:        'return=representation',
-};
-
-let telegramToken  = null;
-let telegramChatId = null;
-let reportMarkers  = L.layerGroup();   // layer untuk marker laporan
-
-/* ── Media Upload State ── */
-let selectedFile = null;  // File object or null
-
-/* ═══════════════════════════════════════════
-   MAP — Leaflet
-   ═══════════════════════════════════════════ */
-const LANGSA = [4.4700, 97.9400];
-
-const map = L.map('map', { zoomControl: false }).setView(LANGSA, 13);
-L.control.zoom({ position: 'bottomright' }).addTo(map);
-
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-  attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
-  maxZoom: 19,
-}).addTo(map);
-
-// Layer group untuk laporan
-reportMarkers.addTo(map);
-
-// Marker utama (draggable)
-const marker = L.marker(LANGSA, {
-  draggable: true,
-  icon: L.divIcon({
-    className: '',
-    html: '<div style="font-size:1.8rem;text-align:center;line-height:1">📌</div>',
-    iconSize: [30, 36],
-    iconAnchor: [15, 36],
-  }),
-}).addTo(map);
-
-marker.on('dragend', updateCoordBadge);
-updateCoordBadge();
-
-function getCoords() {
-  return marker.getLatLng();
+body{
+  font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Oxygen,Ubuntu,sans-serif;
+  background:var(--bg);color:var(--text);line-height:1.6;
+  min-height:100dvh;display:flex;flex-direction:column;align-items:center;
 }
 
-function updateCoordBadge() {
-  const { lat, lng } = getCoords();
-  document.getElementById('coordBadge').textContent =
-    `Koordinat: ${lat.toFixed(5)}, ${lng.toFixed(5)}`;
+/* ═══ Logo / Partner Bar ═══ */
+.logo-bar{
+  width:100%;background:var(--white);
+  border-bottom:1px solid var(--border);
+  padding:.75rem 1.25rem;
+  box-shadow:0 1px 6px rgba(0,0,0,.04);
+  position:relative;z-index:1;
+  margin-top:-28px;
+  border-radius:16px 16px 0 0;
+  display:none;
+}
+.logo-bar.visible{display:block}
+.logo-bar-inner{
+  max-width:720px;margin:0 auto;
+  display:flex;align-items:center;gap:1rem;
+}
+.logo-bar-label{
+  font-size:.7rem;font-weight:700;text-transform:uppercase;
+  letter-spacing:1px;color:var(--muted);
+  white-space:nowrap;flex-shrink:0;
+}
+.logo-track{
+  display:flex;align-items:center;gap:.75rem;
+  overflow-x:auto;flex:1;
+  scrollbar-width:none;-ms-overflow-style:none;
+  padding:.25rem 0;
+}
+.logo-track::-webkit-scrollbar{display:none}
+
+.logo-slot{
+  width:48px;height:48px;min-width:48px;
+  border-radius:10px;
+  border:1.5px dashed var(--border);
+  background:var(--bg);
+  display:flex;align-items:center;justify-content:center;
+  transition:border-color .2s,background .2s;
+  cursor:default;
+}
+.logo-slot:hover{
+  border-color:var(--orange);background:rgba(255,107,53,.04);
+}
+.logo-placeholder{
+  font-size:1.1rem;color:var(--border);font-weight:300;
+  line-height:1;
 }
 
-function resetMap() {
-  map.setView(LANGSA, 13);
-  marker.setLatLng(LANGSA);
-  updateCoordBadge();
+/* When a real logo is placed */
+.logo-item{
+  width:48px;height:48px;min-width:48px;
+  border-radius:10px;
+  border:1.5px solid var(--border);
+  background:var(--white);
+  display:flex;align-items:center;justify-content:center;
+  overflow:hidden;transition:border-color .2s,transform .15s;
+  text-decoration:none;
+}
+.logo-item:hover{
+  border-color:var(--orange);transform:scale(1.08);
+}
+.logo-item img{
+  width:100%;height:100%;object-fit:contain;
+  padding:6px;
 }
 
-function useMyLocation() {
-  if (!navigator.geolocation) {
-    showToast('⚠️', 'Tidak Didukung', 'Browser tidak mendukung geolokasi.');
-    return;
-  }
-  const btn      = document.getElementById('btnGps');
-  const original = btn.innerHTML;
-  btn.innerHTML  = '📡 Mengambil lokasi…';
-  btn.disabled   = true;
-
-  navigator.geolocation.getCurrentPosition(
-    (pos) => {
-      const { latitude: lat, longitude: lng } = pos.coords;
-      map.setView([lat, lng], 16);
-      marker.setLatLng([lat, lng]);
-      updateCoordBadge();
-      btn.innerHTML = original;
-      btn.disabled  = false;
-    },
-    (err) => {
-      showToast('⚠️', 'GPS Gagal', 'Gagal mengambil lokasi: ' + err.message);
-      btn.innerHTML = original;
-      btn.disabled  = false;
-    },
-    { enableHighAccuracy: true, timeout: 10000 },
-  );
+@media(min-width:560px){
+  .logo-slot,.logo-item{width:52px;height:52px;min-width:52px}
 }
 
-/* ═══════════════════════════════════════════
-   SUPABASE — Load Telegram Credentials
-   ═══════════════════════════════════════════ */
-async function loadTelegramConfig() {
-  try {
-    const res = await fetch(`${SUPABASE_URL}/rest/v1/settings?select=*&limit=10`, {
-      headers: SB_HEADERS,
-    });
-    if (!res.ok) throw new Error('Supabase request gagal: HTTP ' + res.status);
-
-    const rows = await res.json();
-    if (!rows.length) throw new Error('Tabel settings kosong.');
-
-    // Schema A: key-value
-    if (rows[0].key !== undefined && rows[0].value !== undefined) {
-      for (const row of rows) {
-        if (row.key === 'telegram_token')   telegramToken  = row.value;
-        if (row.key === 'telegram_chat_id') telegramChatId = row.value;
-      }
-    }
-    // Schema B: direct columns
-    else {
-      telegramToken  = rows[0].telegram_token  || rows[0].token  || null;
-      telegramChatId = rows[0].telegram_chat_id || rows[0].chat_id || null;
-    }
-
-    if (!telegramToken || !telegramChatId) {
-      console.warn('[LaporBencana] Token/Chat ID tidak ditemukan di tabel settings.');
-      console.warn('[LaporBencana] Rows dari Supabase:', JSON.stringify(rows).substring(0, 500));
-    } else {
-      console.info('[LaporBencana] Konfigurasi Telegram berhasil dimuat.');
-      console.info('[LaporBencana] Chat ID:', telegramChatId, '| Token prefix:', telegramToken.substring(0, 10) + '...');
-    }
-  } catch (e) {
-    console.error('[LaporBencana] Gagal memuat konfigurasi:', e);
-  }
+/* ── Header ── */
+.header{
+  width:100%;background:linear-gradient(135deg,var(--orange),var(--red));
+  color:var(--white);text-align:center;
+  padding:2rem 1.25rem 3rem;
+  position:relative;
+}
+.header::after{
+  content:'';position:absolute;bottom:-1px;left:0;right:0;
+  height:32px;background:var(--bg);
+  border-radius:24px 24px 0 0;
+}
+.header-icon{
+  font-size:2.2rem;display:block;margin-bottom:.5rem;
+  filter:drop-shadow(0 2px 4px rgba(0,0,0,.15));
+}
+.header h1{
+  font-size:1.65rem;font-weight:800;letter-spacing:.8px;
+  text-shadow:0 1px 3px rgba(0,0,0,.12);
+  margin-bottom:.2rem;
+}
+.header p{
+  font-size:.82rem;opacity:.88;font-weight:400;
+  letter-spacing:.2px;margin-bottom:1rem;
 }
 
-/* ═══════════════════════════════════════════
-   REPORTS — Save & Load from Supabase
-   ═══════════════════════════════════════════ */
+/* ── Join Telegram Button ── */
+.btn-join-telegram{
+  display:inline-flex;align-items:center;gap:.5rem;
+  padding:.6rem 1.4rem;
+  background:var(--white);color:var(--telegram);
+  border:none;border-radius:50px;
+  font-size:.82rem;font-weight:700;
+  text-decoration:none;
+  cursor:pointer;transition:all .25s;
+  box-shadow:0 4px 14px rgba(0,0,0,.15);
+  position:relative;z-index:1;
+}
+.btn-join-telegram:hover{
+  background:var(--telegram);color:var(--white);
+  transform:translateY(-2px);
+  box-shadow:0 6px 20px rgba(34,158,217,.35);
+}
+.btn-join-telegram:active{transform:translateY(0)}
+.tg-icon{flex-shrink:0;transition:transform .2s}
+.btn-join-telegram:hover .tg-icon{transform:scale(1.15)}
+.join-arrow{
+  font-size:.9rem;transition:transform .2s;
+}
+.btn-join-telegram:hover .join-arrow{transform:translateX(3px)}
 
-/** Save a report to Supabase `reports` table */
-async function saveReportToSupabase(nama, jenis, deskripsi, lat, lng) {
-  try {
-    // Expired 7 hari dari sekarang
-    const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
-
-    const res = await fetch(`${SUPABASE_URL}/rest/v1/reports`, {
-      method: 'POST',
-      headers: SB_HEADERS,
-      body: JSON.stringify({
-        name:        nama,
-        type:        jenis,
-        description: deskripsi,
-        lat:         parseFloat(lat.toFixed(6)),
-        lng:         parseFloat(lng.toFixed(6)),
-        created_at:  new Date().toISOString(),
-        expires_at:  expiresAt,
-      }),
-    });
-    if (!res.ok) {
-      const errText = await res.text();
-      console.warn('[LaporBencana] Gagal simpan ke Supabase:', res.status, errText);
-      return false;
-    }
-    console.info('[LaporBencana] Laporan tersimpan di Supabase (expires:', expiresAt, ')');
-    return true;
-  } catch (e) {
-    console.warn('[LaporBencana] Gagal simpan ke Supabase:', e);
-    return false;
-  }
+/* ── Container ── */
+.container{
+  width:100%;max-width:520px;padding:1.5rem 1.25rem;
+  position:relative;z-index:1;
 }
 
-/** Load recent reports from Supabase and render */
-async function loadReports() {
-  const listEl  = document.getElementById('reportsList');
-  const cardEl  = document.getElementById('reportsCard');
-  const countEl = document.getElementById('reportsCount');
-
-  try {
-    const res = await fetch(
-      `${SUPABASE_URL}/rest/v1/reports?select=*,upvotes&order=created_at.desc&limit=20&expires_at=gt.${new Date().toISOString()}`,
-      { headers: SB_HEADERS },
-    );
-    if (!res.ok) throw new Error('HTTP ' + res.status);
-
-    const reports = await res.json();
-    if (!reports.length) {
-      cardEl.style.display = 'block';
-      listEl.innerHTML = `
-        <div class="report-empty">
-          <span class="report-empty-icon">📭</span>
-          Belum ada laporan. Jadilah yang pertama!
-        </div>`;
-      countEl.textContent = '';
-      return;
-    }
-
-    // Show card & count
-    cardEl.style.display = 'block';
-    countEl.textContent = `${reports.length} laporan`;
-
-    // Clear old markers
-    reportMarkers.clearLayers();
-
-    // Detect crisis clusters for highlight
-    const crisisIds = detectCrisisClusters(reports);
-
-    // Render list & map markers
-    listEl.innerHTML = reports.map((r, i) => {
-      const emoji = getTypeEmoji(r.type);
-      const time  = formatTimeAgo(r.created_at);
-      const votes = r.upvotes || 0;
-      const voted = hasVoted(r.id);
-      const votedClass = voted ? 'voted' : '';
-      const votedLabel = voted ? '👍✓' : '👍';
-      return `
-        <div class="report-item" data-idx="${i}">
-          <div class="report-icon">${emoji}</div>
-          <div class="report-body">
-            <div class="report-type">${escapeHtml(r.type)}</div>
-            <div class="report-desc">${escapeHtml(r.description)}</div>
-            <div class="report-meta">
-              <span>👤 ${escapeHtml(r.name)}</span>
-              <span>⏱️ ${time}</span>
-            </div>
-            <div class="report-actions">
-              <button class="btn-upvote ${votedClass}" onclick="handleUpvote('${r.id}', this)" ${voted ? 'disabled' : ''} title="Validasi laporan ini">
-                ${votedLabel} <span class="vote-count">${votes}</span>
-              </button>
-            </div>
-          </div>
-          <button class="report-map-btn" onclick="flyToReport(${r.lat},${r.lng})" title="Lihat di peta">📍</button>
-        </div>`;
-    }).join('');
-
-    // Add markers to map
-    reports.forEach((r) => {
-      const emoji = getTypeEmoji(r.type);
-      const isCrisis = crisisIds.has(r.id);
-      const markerClass = isCrisis ? 'crisis-marker' : '';
-      const markerHtml = isCrisis
-        ? `<div class="crisis-marker" style="font-size:1.3rem;text-align:center;line-height:1;filter:drop-shadow(0 0 4px rgba(230,57,70,.8))">${emoji}</div>`
-        : `<div style="font-size:1.1rem;text-align:center;line-height:1;filter:drop-shadow(0 1px 2px rgba(0,0,0,.3))">${emoji}</div>`;
-
-      const m = L.marker([r.lat, r.lng], {
-        icon: L.divIcon({
-          className: markerClass,
-          html: markerHtml,
-          iconSize: isCrisis ? [28, 28] : [22, 22],
-          iconAnchor: isCrisis ? [14, 14] : [11, 11],
-          zIndexOffset: isCrisis ? 1000 : 0,
-        }),
-      });
-
-      const upvoteInfo = (r.upvotes || 0) > 0 ? `<br><span style="font-size:.72rem;color:var(--orange)">👍 ${r.upvotes} validasi</span>` : '';
-      m.bindPopup(`
-        <div style="font-size:.82rem;line-height:1.5;min-width:160px">
-          <strong>${escapeHtml(r.type)}</strong><br>
-          <span style="color:#6e6e73">${escapeHtml(r.description)}</span><br>
-          <span style="font-size:.72rem;color:#999">👤 ${escapeHtml(r.name)} · ${formatTimeAgo(r.created_at)}</span>
-          ${upvoteInfo}
-        </div>
-      `);
-      reportMarkers.addLayer(m);
-    });
-
-  } catch (e) {
-    console.warn('[LaporBencana] Gagal memuat laporan:', e);
-    // Tampilkan card tapi dengan pesan error ringan
-    cardEl.style.display = 'block';
-    listEl.innerHTML = `
-      <div class="report-empty">
-        <span class="report-empty-icon">⚠️</span>
-        Gagal memuat laporan. Coba lagi nanti.
-      </div>`;
-  }
+/* ── Card ── */
+.card{
+  background:var(--card);border-radius:var(--radius);
+  box-shadow:var(--shadow);padding:1.4rem 1.5rem;margin-bottom:1rem;
 }
-
-/** Fly map to a report location */
-function flyToReport(lat, lng) {
-  map.flyTo([lat, lng], 16, { duration: 0.8 });
-  // Open popup of nearest marker
-  reportMarkers.eachLayer((layer) => {
-    const ll = layer.getLatLng();
-    if (Math.abs(ll.lat - lat) < 0.0001 && Math.abs(ll.lng - lng) < 0.0001) {
-      layer.openPopup();
-    }
-  });
+.card-title{
+  font-size:.75rem;font-weight:700;text-transform:uppercase;
+  letter-spacing:1.2px;color:var(--muted);margin-bottom:1.1rem;
+  padding-bottom:.65rem;
+  border-bottom:1px solid var(--border);
+  display:flex;align-items:center;gap:.45rem;
 }
+.card-title .icon{font-size:.95rem}
 
-/** Extract emoji from type string */
-function getTypeEmoji(type) {
-  if (!type) return '⚠️';
-  const match = type.match(/^(\p{Emoji_Presentation}|\p{Extended_Pictographic})/u);
-  return match ? match[0] : '⚠️';
+/* ── Form ── */
+label{display:block;font-size:.8rem;font-weight:600;color:var(--muted);margin-bottom:.35rem}
+
+input[type="text"],select,textarea{
+  width:100%;padding:.7rem .85rem;border:1.5px solid var(--border);
+  border-radius:10px;font-size:.95rem;
+  background-color:var(--bg);
+  color:var(--text);transition:border .2s,box-shadow .2s;outline:none;
+  font-family:inherit;
 }
-
-/** Format ISO date to relative time (id) */
-function formatTimeAgo(isoString) {
-  const diff = Date.now() - new Date(isoString).getTime();
-  const mins = Math.floor(diff / 60000);
-  if (mins < 1)  return 'baru saja';
-  if (mins < 60) return `${mins}m lalu`;
-  const hours = Math.floor(mins / 60);
-  if (hours < 24) return `${hours}j lalu`;
-  const days = Math.floor(hours / 24);
-  if (days < 7) return `${days}h lalu`;
-  return new Date(isoString).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' });
+input:focus,select:focus,textarea:focus{
+  border-color:var(--orange);box-shadow:0 0 0 3px var(--orange-glow);
 }
+textarea{resize:vertical;min-height:90px}
 
-function escapeHtml(str) {
-  const d = document.createElement('div');
-  d.textContent = str || '';
-  return d.innerHTML;
+select{
+  appearance:none;-webkit-appearance:none;
+  padding-right:2.2rem;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%236e6e73' viewBox='0 0 16 16'%3E%3Cpath d='M1.5 5.5l6.5 6 6.5-6'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;
+  background-position:right .85rem center;
+  background-size:12px 12px;
 }
+.form-group{margin-bottom:1rem}
 
-/** Clean up expired reports from Supabase (best effort, fire & forget) */
-async function cleanupExpiredReports() {
-  try {
-    await fetch(
-      `${SUPABASE_URL}/rest/v1/reports?expires_at=lt.${new Date().toISOString()}`,
-      { method: 'DELETE', headers: SB_HEADERS },
-    );
-    console.info('[LaporBencana] Expired reports cleaned up.');
-  } catch (e) {
-    // Silent fail — tidak mengganggu user
-    console.debug('[LaporBencana] Cleanup skipped:', e.message);
-  }
-}
-
-/* ═══════════════════════════════════════════
-   MEDIA UPLOAD — Optional photo/video
-   ═══════════════════════════════════════════ */
-const MAX_PHOTO_SIZE = 10 * 1024 * 1024;  // 10 MB
-const MAX_VIDEO_SIZE = 50 * 1024 * 1024;  // 50 MB
-
-function setupMediaUpload() {
-  const zone      = document.getElementById('uploadZone');
-  const input     = document.getElementById('mediaInput');
-  const placeholder = document.getElementById('uploadPlaceholder');
-  const preview   = document.getElementById('uploadPreview');
-  const previewImg  = document.getElementById('previewImg');
-  const previewVideo = document.getElementById('previewVideo');
-  const fileInfo  = document.getElementById('uploadFileInfo');
-  const removeBtn = document.getElementById('uploadRemove');
-
-  // Click zone → open file picker
-  zone.addEventListener('click', (e) => {
-    if (e.target === removeBtn || e.target.closest('.upload-remove')) return;
-    input.click();
-  });
-
-  // File selected
-  input.addEventListener('change', () => {
-    const file = input.files[0];
-    if (!file) return;
-    handleFileSelect(file);
-  });
-
-  // Remove file
-  removeBtn.addEventListener('click', (e) => {
-    e.stopPropagation();
-    clearMedia();
-  });
-
-  // Drag & drop
-  zone.addEventListener('dragover', (e) => { e.preventDefault(); zone.style.borderColor = 'var(--orange)'; });
-  zone.addEventListener('dragleave', () => { zone.style.borderColor = ''; });
-  zone.addEventListener('drop', (e) => {
-    e.preventDefault();
-    zone.style.borderColor = '';
-    const file = e.dataTransfer.files[0];
-    if (file) handleFileSelect(file);
-  });
-
-  function handleFileSelect(file) {
-    const isImage = file.type.startsWith('image/');
-    const isVideo = file.type.startsWith('video/');
-    if (!isImage && !isVideo) {
-      showToast('⚠️', 'Format Tidak Didukung', 'Hanya foto (JPG, PNG, WEBP) atau video (MP4) yang bisa dilampirkan.');
-      return;
-    }
-    const maxSize = isImage ? MAX_PHOTO_SIZE : MAX_VIDEO_SIZE;
-    if (file.size > maxSize) {
-      const limit = isImage ? '10 MB' : '50 MB';
-      showToast('📦', 'File Terlalu Besar', `Ukuran maksimal ${limit}.`);
-      return;
-    }
-
-    selectedFile = file;
-
-    // Show preview
-    const url = URL.createObjectURL(file);
-    previewImg.style.display = 'none';
-    previewVideo.style.display = 'none';
-    if (isImage) {
-      previewImg.src = url;
-      previewImg.style.display = 'block';
-    } else {
-      previewVideo.src = url;
-      previewVideo.style.display = 'block';
-      previewVideo.play().catch(() => {});
-    }
-
-    const sizeStr = file.size < 1024 * 1024
-      ? `${(file.size / 1024).toFixed(0)} KB`
-      : `${(file.size / (1024 * 1024)).toFixed(1)} MB`;
-    fileInfo.innerHTML = `<strong>${file.name}</strong>${sizeStr}`;
-
-    placeholder.style.display = 'none';
-    preview.style.display = 'flex';
-    zone.classList.add('has-file');
-  }
-}
-
-function clearMedia() {
-  selectedFile = null;
-  const input = document.getElementById('mediaInput');
-  input.value = '';
-  document.getElementById('uploadPlaceholder').style.display = 'flex';
-  document.getElementById('uploadPreview').style.display = 'none';
-  document.getElementById('uploadZone').classList.remove('has-file');
-  const prog = document.getElementById('uploadProgress');
-  prog.style.display = 'none';
-  document.getElementById('uploadProgressBar').style.width = '0%';
-  // Reset compression status
-  const statusEl = document.getElementById('compressStatus');
-  if (statusEl) {
-    statusEl.style.display = 'none';
-    statusEl.className = 'compress-status';
-    statusEl.innerHTML = '';
-  }
-}
-
-function showUploadProgress(percent) {
-  const prog = document.getElementById('uploadProgress');
-  prog.style.display = 'block';
-  document.getElementById('uploadProgressBar').style.width = percent + '%';
-}
-
-/* ═══════════════════════════════════════════
-   IMAGE COMPRESSION
-   ═══════════════════════════════════════════ */
-const COMPRESS_OPTIONS = {
-  maxSizeMB:        0.5,      // target: di bawah 500 KB
-  maxWidthOrHeight: 1920,     // resize jika lebih besar
-  useWebWorker:     true,     // offload ke web worker
-  fileType:         'image/jpeg', // output format (lebih kecil dari PNG)
-  initialQuality:   0.8,     // kualitas awal
-};
-
-/** Check if compression is enabled by user */
-function isCompressEnabled() {
-  const cb = document.getElementById('compressCheck');
-  return cb ? cb.checked : false;
-}
-
-/** Compress an image file using browser-image-compression */
-async function compressImage(file) {
-  const statusEl = document.getElementById('compressStatus');
-
-  // Show status
-  statusEl.style.display = 'flex';
-  statusEl.className = 'compress-status compressing';
-  statusEl.innerHTML = '⏳ Mengompres foto…';
-
-  const originalSize = file.size;
-
-  try {
-    if (typeof imageCompression === 'undefined') {
-      throw new Error('Library kompresi belum dimuat');
-    }
-
-    const compressed = await imageCompression(file, COMPRESS_OPTIONS);
-
-    const ratio = ((1 - compressed.size / originalSize) * 100).toFixed(0);
-    const origStr = formatFileSize(originalSize);
-    const compStr = formatFileSize(compressed.size);
-
-    if (compressed.size < originalSize) {
-      statusEl.className = 'compress-status success';
-      statusEl.innerHTML = `✅ Kompresi berhasil: ${origStr} → ${compStr} (−${ratio}%)`;
-      console.info(`[LaporBencana] Compressed: ${origStr} → ${compStr} (−${ratio}%)`);
-    } else {
-      statusEl.className = 'compress-status success';
-      statusEl.innerHTML = `✅ Foto sudah optimal (${origStr})`;
-      console.info('[LaporBencana] File already optimal, skipping compression');
-    }
-
-    // Rename to .jpg since we convert to JPEG
-    const newName = file.name.replace(/\.[^.]+$/, '.jpg');
-    return new File([compressed], newName, { type: 'image/jpeg' });
-
-  } catch (e) {
-    console.warn('[LaporBencana] Compression failed:', e);
-    statusEl.className = 'compress-status error';
-    statusEl.innerHTML = `⚠️ Kompresi gagal, kirim asli (${formatFileSize(originalSize)})`;
-    return file; // fallback: kirim file asli
-  }
-}
-
-/** Format bytes to human-readable */
-function formatFileSize(bytes) {
-  if (bytes < 1024) return bytes + ' B';
-  if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(0) + ' KB';
-  return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
-}
-
-/* ═══════════════════════════════════════════
-   SUBMIT
-   ═══════════════════════════════════════════ */
-
-/* ═══════════════════════════════════════════
-   ANTI-SPAM
-   ═══════════════════════════════════════════ */
-const SPAM = {
-  cooldownSec:    60,      // detik antar submit
-  maxPerHour:     5,       // maks submit per jam
-  minDescLength:  20,      // karakter minimum deskripsi
-  storageKey:     'laporbencana_lastSubmit',
-  historyKey:     'laporbencana_submitHistory',
-};
-
-/** Check if user is in cooldown period */
-function isCooldown() {
-  const last = parseInt(localStorage.getItem(SPAM.storageKey) || '0', 10);
-  const elapsed = (Date.now() - last) / 1000;
-  return elapsed < SPAM.cooldownSec ? Math.ceil(SPAM.cooldownSec - elapsed) : 0;
-}
-
-/** Get remaining submissions allowed this hour */
-function getRemainingSubmissions() {
-  const history = JSON.parse(localStorage.getItem(SPAM.historyKey) || '[]');
-  const oneHourAgo = Date.now() - 3600000;
-  const recent = history.filter((t) => t > oneHourAgo);
-  // Clean old entries
-  localStorage.setItem(SPAM.historyKey, JSON.stringify(recent));
-  return SPAM.maxPerHour - recent.length;
-}
-
-/** Record a submission timestamp */
-function recordSubmission() {
-  localStorage.setItem(SPAM.storageKey, String(Date.now()));
-  const history = JSON.parse(localStorage.getItem(SPAM.historyKey) || '[]');
-  history.push(Date.now());
-  localStorage.setItem(SPAM.historyKey, JSON.stringify(history));
-}
-
-/** Simple hash for duplicate detection */
-function simpleHash(str) {
-  let h = 0;
-  for (let i = 0; i < str.length; i++) {
-    h = ((h << 5) - h + str.charCodeAt(i)) | 0;
-  }
-  return h;
-}
-
-/** Check if current form is duplicate of last submission */
-function isDuplicate(nama, jenis, deskripsi, lat, lng) {
-  const lastHash = localStorage.getItem('laporbencana_lastHash');
-  const current  = simpleHash(`${nama}|${jenis}|${deskripsi}|${lat.toFixed(4)}|${lng.toFixed(4)}`).toString();
-  return lastHash === current;
-}
-
-function saveHash(nama, jenis, deskripsi, lat, lng) {
-  const h = simpleHash(`${nama}|${jenis}|${deskripsi}|${lat.toFixed(4)}|${lng.toFixed(4)}`).toString();
-  localStorage.setItem('laporbencana_lastHash', h);
-}
-
-/** Show cooldown overlay with countdown */
-function showCooldown(seconds) {
-  const overlay = document.getElementById('cooldownOverlay');
-  const label   = document.getElementById('cooldownLabel');
-  const circle  = document.getElementById('cooldownCircle');
-
-  const circumference = 2 * Math.PI * 35;
-  circle.style.strokeDasharray  = circumference;
-  circle.style.strokeDashoffset = circumference;
-
-  overlay.classList.add('show');
-  let remaining = seconds;
-
-  const tick = () => {
-    label.textContent = remaining;
-    const progress = 1 - (remaining / seconds);
-    circle.style.strokeDashoffset = circumference * (1 - progress);
-
-    if (remaining <= 0) {
-      overlay.classList.remove('show');
-      return;
-    }
-    remaining--;
-    setTimeout(tick, 1000);
-  };
-  tick();
+/* ── Honeypot (invisible to humans) ── */
+.hp-wrap{
+  position:absolute;left:-9999px;top:-9999px;
+  opacity:0;height:0;width:0;overflow:hidden;
+  pointer-events:none;
 }
 
 /* ── Character Counter ── */
-function setupCharCounter() {
-  const textarea = document.getElementById('deskripsi');
-  const counter  = document.getElementById('charCounter');
-  const hint     = document.getElementById('charHint');
-
-  textarea.addEventListener('input', () => {
-    const len = textarea.value.trim().length;
-    counter.textContent = `${len} / ${SPAM.minDescLength}`;
-
-    if (len >= SPAM.minDescLength) {
-      counter.className = 'char-counter ok';
-      hint.className    = 'char-hint ok';
-    } else if (len > 0) {
-      counter.className = 'char-counter warn';
-      hint.className    = 'char-hint warn';
-    } else {
-      counter.className = 'char-counter';
-      hint.className    = 'char-hint';
-    }
-  });
+.char-hint{
+  font-weight:400;font-size:.72rem;
+  transition:color .2s;
 }
-async function submitReport() {
-  const nama      = document.getElementById('nama').value.trim();
-  const jenis     = document.getElementById('jenis').value;
-  const deskripsi = document.getElementById('deskripsi').value.trim();
-  const { lat, lng } = getCoords();
+.char-hint.ok{color:var(--green)}
+.char-hint.warn{color:var(--orange)}
 
-  // ── Anti-Spam: Honeypot ──
-  if (document.getElementById('hp_website').value) {
-    console.warn('[LaporBencana] Honeypot triggered — bot detected.');
-    showToast('✅', 'Laporan Terkirim!', 'Terima kasih atas laporan Anda.');
-    return;
-  }
+.char-counter{
+  font-size:.7rem;color:var(--muted);margin-top:.25rem;
+  text-align:right;font-family:'SF Mono',Menlo,monospace;
+  transition:color .2s;
+}
+.char-counter.ok{color:var(--green)}
+.char-counter.warn{color:var(--orange)}
+.char-counter.bad{color:var(--red)}
 
-  // ── Anti-Spam: Cooldown ──
-  const cooldownLeft = isCooldown();
-  if (cooldownLeft > 0) {
-    showCooldown(cooldownLeft);
-    return;
-  }
+/* ── Map ── */
+#map{
+  width:100%;height:260px;border-radius:12px;
+  border:1.5px solid var(--border);z-index:0;
+}
+.map-hint{
+  font-size:.78rem;color:var(--muted);margin-bottom:.75rem;
+}
+.map-actions{display:flex;gap:.5rem;margin-top:.75rem;flex-wrap:wrap}
 
-  // ── Anti-Spam: Rate Limit ──
-  const remaining = getRemainingSubmissions();
-  if (remaining <= 0) {
-    showToast('⏳', 'Batas Tercapai', `Maksimal ${SPAM.maxPerHour} laporan per jam. Coba lagi nanti.`);
-    return;
-  }
+.btn-ghost{
+  flex:1;min-width:0;padding:.55rem .5rem;border:1.5px solid var(--border);
+  border-radius:10px;background:var(--white);font-size:.78rem;font-weight:600;
+  color:var(--text);cursor:pointer;transition:all .2s;
+  display:flex;align-items:center;justify-content:center;gap:.35rem;
+}
+.btn-ghost:hover{border-color:var(--orange);color:var(--orange)}
+.btn-ghost:disabled{opacity:.5;cursor:not-allowed}
 
-  // ── Validate fields ──
-  if (!nama || !jenis || !deskripsi) {
-    showToast('⚠️', 'Data Belum Lengkap', 'Harap isi semua kolom yang diperlukan.');
-    return;
-  }
-  if (deskripsi.length < SPAM.minDescLength) {
-    showToast('📝', 'Deskripsi Terlalu Pendek', `Minimal ${SPAM.minDescLength} karakter untuk menjelaskan keadaan.`);
-    return;
-  }
-  if (!telegramToken || !telegramChatId) {
-    showToast('❌', 'Konfigurasi Hilang', 'Token Telegram belum termuat. Coba refresh halaman.');
-    return;
-  }
-
-  // ── Anti-Spam: Duplicate ──
-  if (isDuplicate(nama, jenis, deskripsi, lat, lng)) {
-    showToast('🔄', 'Laporan Duplikat', 'Laporan yang sama sudah pernah dikirim.');
-    return;
-  }
-
-  // UI: loading
-  const btn     = document.getElementById('btnSubmit');
-  const spinner = document.getElementById('spinner');
-  const btnText = document.getElementById('btnText');
-  btn.disabled       = true;
-  spinner.style.display = 'block';
-  btnText.textContent   = 'Mengirim laporan…';
-
-  // Telegram message (caption for media, text for text-only)
-  const mapsLink  = `https://www.google.com/maps?q=${lat},${lng}`;
-  const timestamp = new Date().toLocaleString('id-ID', { timeZone: 'Asia/Jakarta' });
-
-  const caption = [
-    '🚨 *LAPORAN BENCANA BARU*',
-    '━━━━━━━━━━━━━━━━━━━━',
-    `👤 *Nama Pelapor:* ${escapeMarkdown(nama)}`,
-    `📋 *Jenis Bencana:* ${jenis}`,
-    `📝 *Deskripsi:*`,
-    escapeMarkdown(deskripsi),
-    '',
-    `📍 *Koordinat:* ${lat.toFixed(6)}, ${lng.toFixed(6)}`,
-    `🗺️ *Google Maps:* ${mapsLink}`,
-    '━━━━━━━━━━━━━━━━━━━━',
-    `⏱️ ${timestamp} WIB`,
-  ].join('\n');
-
-  let success = false;
-
-  try {
-    // 1. Send to Telegram — with or without media
-    let tgRes, tgData;
-    let fileToSend = selectedFile;
-
-    if (selectedFile) {
-      const isImage = selectedFile.type.startsWith('image/');
-      const isVideo = selectedFile.type.startsWith('video/');
-
-      // ── Compress image if enabled ──
-      if (isImage && isCompressEnabled()) {
-        fileToSend = await compressImage(selectedFile);
-      }
-
-      // ── Send with media (FormData: sendPhoto / sendVideo) ──
-      const endpoint = isVideo ? 'sendVideo' : 'sendPhoto';
-      const fileField = isVideo ? 'video' : 'photo';
-
-      const formData = new FormData();
-      formData.append('chat_id', telegramChatId);
-      formData.append(fileField, fileToSend);
-      formData.append('caption', caption);
-      formData.append('parse_mode', 'Markdown');
-
-      console.info(`[LaporBencana] Mengirim ${endpoint}:`, fileToSend.name, `(${(fileToSend.size / 1024).toFixed(0)} KB)`);
-
-      // Use XMLHttpRequest for upload progress tracking
-      tgData = await new Promise((resolve, reject) => {
-        const xhr = new XMLHttpRequest();
-        xhr.open('POST', `https://api.telegram.org/bot${telegramToken}/${endpoint}`);
-
-        xhr.upload.addEventListener('progress', (e) => {
-          if (e.lengthComputable) {
-            showUploadProgress(Math.round((e.loaded / e.total) * 100));
-          }
-        });
-
-        xhr.addEventListener('load', () => {
-          console.info(`[LaporBencana] ${endpoint} response:`, xhr.status, xhr.responseText.substring(0, 500));
-          if (xhr.status >= 200 && xhr.status < 300) {
-            try {
-              resolve(JSON.parse(xhr.responseText));
-            } catch (_) {
-              reject(new Error('Respons Telegram tidak valid'));
-            }
-          } else {
-            // HTTP error — coba parse body untuk dapat error dari Telegram
-            let errMsg = `HTTP ${xhr.status}`;
-            try {
-              const errData = JSON.parse(xhr.responseText);
-              errMsg = errData.description || errMsg;
-            } catch (_) { /* body bukan JSON */ }
-            reject(new Error(errMsg));
-          }
-        });
-
-        xhr.addEventListener('error', () => {
-          console.error('[LaporBencana] XHR network error (kemungkinan CORS):', endpoint);
-          reject(new Error('Gagal terhubung ke Telegram. Cek koneksi internet.'));
-        });
-
-        xhr.send(formData);
-      });
-
-      // Auto-handle migrasi grup → supergroup
-      if (!tgData.ok && tgData.parameters?.migrate_to_chat_id) {
-        const newChatId = tgData.parameters.migrate_to_chat_id;
-        console.warn(`[LaporBencana] Grup bermigrasi! Chat ID baru: ${newChatId}`);
-        telegramChatId = newChatId;
-        formData.set('chat_id', telegramChatId);
-
-        // Retry dengan chat_id baru
-        tgData = await new Promise((resolve, reject) => {
-          const xhr2 = new XMLHttpRequest();
-          xhr2.open('POST', `https://api.telegram.org/bot${telegramToken}/${endpoint}`);
-          xhr2.addEventListener('load', () => {
-            try { resolve(JSON.parse(xhr2.responseText)); }
-            catch (_) { reject(new Error('Respons Telegram tidak valid')); }
-          });
-          xhr2.addEventListener('error', () => reject(new Error('Gagal terhubung ke Telegram.')));
-          xhr2.send(formData);
-        });
-        console.info('[LaporBencana] Retry', endpoint, 'response:', tgData.ok);
-      }
-
-      if (!tgData.ok) throw new Error(tgData.description || 'Telegram API error');
-
-    } else {
-      // ── Text-only (sendMessage) ──
-      console.info('[LaporBencana] Mengirim sendMessage (tanpa media)');
-      tgRes = await fetch(
-        `https://api.telegram.org/bot${telegramToken}/sendMessage`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            chat_id:               telegramChatId,
-            text:                  caption,
-            parse_mode:            'Markdown',
-            disable_web_page_preview: true,
-          }),
-        },
-      );
-      tgData = await tgRes.json();
-
-      // Auto-handle migrasi grup → supergroup (Telegram kirim migrate_to_chat_id)
-      if (!tgData.ok && tgData.parameters?.migrate_to_chat_id) {
-        const newChatId = tgData.parameters.migrate_to_chat_id;
-        console.warn(`[LaporBencana] Grup bermigrasi! Chat ID baru: ${newChatId}`);
-        telegramChatId = newChatId;
-
-        // Retry dengan chat_id baru
-        tgRes = await fetch(
-          `https://api.telegram.org/bot${telegramToken}/sendMessage`,
-          {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              chat_id:               telegramChatId,
-              text:                  caption,
-              parse_mode:            'Markdown',
-              disable_web_page_preview: true,
-            }),
-          },
-        );
-        tgData = await tgRes.json();
-        console.info('[LaporBencana] Retry sendMessage response:', tgRes.status);
-      }
-
-      if (!tgData.ok) throw new Error(tgData.description || 'Telegram API error');
-    }
-
-    // 2. Save to Supabase (best effort)
-    await saveReportToSupabase(nama, jenis, deskripsi, lat, lng);
-
-    success = true;
-    recordSubmission();
-    saveHash(nama, jenis, deskripsi, lat, lng);
-    showToast('✅', 'Laporan Terkirim!', `Petugas akan segera menindaklanjuti. (Tersisa ${getRemainingSubmissions()} laporan/jam)`);
-    resetForm();
-
-    // 3. Refresh reports list
-    loadReports();
-
-  } catch (e) {
-    console.error('[LaporBencana] Kirim gagal:', e);
-    showToast('❌', 'Gagal Terkirim', 'Error: ' + (e.message || 'Tidak diketahui'));
-    console.error('[LaporBencana] Debug info:', {
-      telegramToken: telegramToken ? telegramToken.substring(0, 10) + '...' : null,
-      telegramChatId,
-      hasFile: !!selectedFile,
-      fileName: selectedFile?.name,
-      compressedFile: fileToSend !== selectedFile ? fileToSend?.name : null,
-    });
-  } finally {
-    btn.disabled       = false;
-    spinner.style.display = 'none';
-    btnText.textContent   = '🚨 Kirim Laporan Darurat';
-  }
+.coord-badge{
+  margin-top:.5rem;font-size:.75rem;color:var(--muted);
+  background:var(--bg);padding:.4rem .7rem;border-radius:8px;
+  font-family:'SF Mono',Menlo,monospace;text-align:center;
 }
 
-function resetForm() {
-  document.getElementById('nama').value = '';
-  document.getElementById('jenis').selectedIndex = 0;
-  document.getElementById('deskripsi').value = '';
-  clearMedia();
-  resetMap();
+/* ── Upload Zone ── */
+.card-attach{padding-bottom:1.25rem}
+.optional-badge{
+  font-size:.62rem;font-weight:600;text-transform:none;
+  letter-spacing:0;color:var(--muted);background:var(--bg);
+  padding:.15rem .5rem;border-radius:6px;margin-left:.35rem;
+  vertical-align:middle;
+}
+.upload-zone{
+  border:1.5px dashed var(--border);border-radius:12px;
+  padding:.85rem;cursor:pointer;transition:border-color .2s,background .2s;
+  position:relative;min-height:56px;
+  display:flex;align-items:center;justify-content:center;
+}
+.upload-zone:hover{border-color:var(--orange);background:rgba(255,107,53,.03)}
+.upload-zone.has-file{border-style:solid;border-color:var(--green)}
+
+.upload-placeholder{
+  display:flex;align-items:center;gap:.5rem;
+  font-size:.82rem;color:var(--muted);
+  flex-wrap:wrap;justify-content:center;
+}
+.upload-icon{font-size:1.2rem}
+.upload-text{font-weight:600;color:var(--text)}
+.upload-hint{font-size:.68rem;width:100%;text-align:center;margin-top:.1rem}
+
+.upload-preview{
+  position:relative;display:flex;align-items:center;gap:.75rem;
+  width:100%;
+}
+.upload-preview img,.upload-preview video{
+  width:56px;height:56px;object-fit:cover;border-radius:8px;flex-shrink:0;
+}
+.upload-file-info{
+  flex:1;min-width:0;
+  font-size:.75rem;color:var(--muted);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+.upload-file-info strong{color:var(--text);display:block;font-size:.8rem}
+
+.upload-remove{
+  position:absolute;top:-6px;left:50px;
+  width:22px;height:22px;border-radius:50%;
+  border:none;background:var(--red);color:#fff;
+  font-size:.7rem;font-weight:700;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  box-shadow:0 1px 4px rgba(0,0,0,.2);
+  transition:transform .15s;
+}
+.upload-remove:hover{transform:scale(1.15)}
+
+.upload-progress{
+  margin-top:.5rem;height:4px;background:var(--bg);
+  border-radius:4px;overflow:hidden;
+}
+.upload-progress-bar{
+  height:100%;width:0%;background:linear-gradient(90deg,var(--orange),var(--red));
+  border-radius:4px;transition:width .3s;
 }
 
-function escapeMarkdown(text) {
-  return text.replace(/([_*\[\]()~`>#+\-=|{}.!])/g, '\\$1');
+/* ── Submit Button ── */
+.btn-submit{
+  width:100%;padding:.85rem;border:none;border-radius:12px;
+  background:linear-gradient(135deg,var(--orange),var(--red));
+  color:var(--white);font-size:1rem;font-weight:700;
+  cursor:pointer;transition:transform .15s,box-shadow .15s;
+  box-shadow:0 4px 14px var(--orange-glow);
+  display:flex;align-items:center;justify-content:center;gap:.5rem;
 }
+.btn-submit:hover{transform:translateY(-1px);box-shadow:0 6px 20px var(--orange-glow)}
+.btn-submit:active{transform:scale(.98)}
+.btn-submit:disabled{opacity:.6;cursor:not-allowed;transform:none}
+
+/* ── Spinner ── */
+.spinner{
+  width:20px;height:20px;border:2.5px solid rgba(255,255,255,.35);
+  border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite;
+  display:none;
+}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ── Reports List ── */
+.reports-actions{
+  display:flex;align-items:center;gap:.5rem;margin-bottom:.75rem;
+}
+.btn-sm{font-size:.72rem !important;padding:.4rem .65rem !important}
+.reports-count{
+  font-size:.7rem;color:var(--muted);margin-left:auto;
+}
+
+.report-item{
+  display:flex;gap:.75rem;padding:.75rem 0;
+  border-bottom:1px solid var(--border);
+}
+.report-item:last-child{border-bottom:none}
+
+.report-icon{
+  width:36px;height:36px;border-radius:10px;
+  background:var(--bg);display:flex;align-items:center;justify-content:center;
+  font-size:1.1rem;flex-shrink:0;
+}
+.report-body{flex:1;min-width:0}
+.report-type{
+  font-size:.82rem;font-weight:700;color:var(--text);
+  display:flex;align-items:center;gap:.3rem;
+}
+.report-desc{
+  font-size:.75rem;color:var(--muted);margin-top:.15rem;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+.report-meta{
+  display:flex;gap:.6rem;margin-top:.3rem;
+  font-size:.68rem;color:var(--muted);
+}
+.report-meta span{display:flex;align-items:center;gap:.2rem}
+
+.report-map-btn{
+  align-self:center;flex-shrink:0;
+  width:32px;height:32px;border-radius:8px;
+  border:1.5px solid var(--border);background:var(--white);
+  cursor:pointer;font-size:.85rem;
+  display:flex;align-items:center;justify-content:center;
+  transition:border-color .2s;
+}
+.report-map-btn:hover{border-color:var(--orange)}
+
+.report-empty{
+  text-align:center;padding:1.5rem 0;
+  font-size:.8rem;color:var(--muted);
+}
+.report-empty-icon{font-size:1.5rem;display:block;margin-bottom:.4rem}
+
+/* ═══ Footer (from COPYRIGHT.md style) ═══ */
+.footer{
+  width:100%;text-align:center;padding:1.75rem 1rem 1.25rem;
+  margin-top:auto;
+}
+.footer-inner{
+  display:inline-flex;align-items:center;gap:.6rem;
+  padding:.55rem 1.4rem;
+  border-radius:50px;
+  background:rgba(255,107,53,.06);
+  border:1px solid rgba(255,107,53,.15);
+  backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
+}
+.footer-crown{
+  font-size:1rem;
+  animation:crownBob 2s ease-in-out infinite;
+  display:inline-block;
+}
+.footer-crown:last-child{animation-delay:.3s}
+
+@keyframes crownBob{
+  0%,100%{transform:translateY(0) rotate(-5deg)}
+  50%{transform:translateY(-2px) rotate(5deg)}
+}
+
+.footer-text{
+  font-size:.78rem;font-weight:700;
+  background:linear-gradient(90deg,var(--orange),var(--red),#e91e63,#9c27b0,#2196f3,var(--green),var(--orange));
+  background-size:300% auto;
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+  background-clip:text;color:transparent;
+  animation:shimmer 4s linear infinite;
+}
+@keyframes shimmer{
+  0%{background-position:0% center}
+  100%{background-position:300% center}
+}
+
+/* ── Toast Overlay ── */
+.toast-overlay{
+  position:fixed;inset:0;background:rgba(0,0,0,.35);
+  display:none;align-items:center;justify-content:center;z-index:9999;
+  backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);
+}
+.toast-overlay.show{display:flex}
+
+.toast-card{
+  background:var(--white);border-radius:20px;padding:2rem 1.75rem;
+  text-align:center;max-width:320px;width:90%;
+  box-shadow:0 20px 50px rgba(0,0,0,.15);
+  animation:popIn .35s cubic-bezier(.175,.885,.32,1.275);
+}
+@keyframes popIn{from{opacity:0;transform:scale(.8)}to{opacity:1;transform:scale(1)}}
+
+.toast-icon{font-size:3rem;margin-bottom:.75rem}
+.toast-card h3{font-size:1.15rem;margin-bottom:.35rem}
+.toast-card p{font-size:.85rem;color:var(--muted)}
+.toast-btn{
+  margin-top:1.25rem;padding:.6rem 2rem;border:none;border-radius:10px;
+  background:var(--orange);color:#fff;font-weight:700;font-size:.9rem;
+  cursor:pointer;transition:background .2s;
+}
+.toast-btn:hover{background:var(--red)}
+
+/* ── Leaflet popup fix ── */
+.leaflet-popup-content-wrapper{border-radius:12px !important}
+
+/* ── Responsive ── */
+@media(min-width:560px){
+  .header h1{font-size:1.8rem}
+  #map{height:320px}
+}
+
+/* ── Cooldown Overlay ── */
+.cooldown-overlay{
+  position:fixed;inset:0;background:rgba(0,0,0,.45);
+  display:none;align-items:center;justify-content:center;z-index:9998;
+  backdrop-filter:blur(5px);-webkit-backdrop-filter:blur(5px);
+}
+.cooldown-overlay.show{display:flex}
+
+.cooldown-card{
+  background:var(--white);border-radius:20px;padding:2rem;
+  text-align:center;max-width:300px;width:90%;
+  box-shadow:0 20px 50px rgba(0,0,0,.15);
+  animation:popIn .35s cubic-bezier(.175,.885,.32,1.275);
+}
+.cooldown-card .cooldown-icon{font-size:2.5rem;margin-bottom:.5rem}
+.cooldown-card h3{font-size:1rem;margin-bottom:.25rem}
+.cooldown-card p{font-size:.82rem;color:var(--muted);margin-bottom:.75rem}
+
+.cooldown-ring{
+  width:80px;height:80px;margin:0 auto;position:relative;
+}
+.cooldown-ring svg{
+  width:80px;height:80px;transform:rotate(-90deg);
+}
+.cooldown-ring circle{
+  fill:none;stroke-width:5;stroke-linecap:round;
+}
+.cooldown-ring .track{stroke:var(--border)}
+.cooldown-ring .progress{stroke:var(--orange);transition:stroke-dashoffset 1s linear}
+.cooldown-ring .label{
+  position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+  font-size:1.4rem;font-weight:800;color:var(--text);
+}
+
+/* ═══ Compress Option ═══ */
+.compress-option{
+  margin-top:.75rem;
+  padding-top:.65rem;
+  border-top:1px solid var(--border);
+}
+.checkbox-wrap{
+  display:flex;align-items:flex-start;gap:.6rem;
+  cursor:pointer;position:relative;
+  margin-bottom:0;
+}
+.checkbox-wrap input[type="checkbox"]{
+  position:absolute;opacity:0;width:0;height:0;
+  pointer-events:none;
+}
+.checkmark{
+  width:20px;height:20px;min-width:20px;
+  border-radius:6px;border:1.5px solid var(--border);
+  background:var(--bg);
+  display:flex;align-items:center;justify-content:center;
+  transition:all .2s;margin-top:1px;
+}
+.checkmark::after{
+  content:'✓';font-size:.72rem;font-weight:700;
+  color:var(--white);opacity:0;transition:opacity .15s;
+}
+.checkbox-wrap input:checked ~ .checkmark{
+  background:var(--orange);border-color:var(--orange);
+}
+.checkbox-wrap input:checked ~ .checkmark::after{opacity:1}
+.checkbox-wrap:hover .checkmark{border-color:var(--orange)}
+.checkbox-label{
+  font-size:.78rem;color:var(--text);line-height:1.45;
+  font-weight:500;
+}
+.compress-hint{
+  font-size:.68rem;color:var(--muted);font-weight:400;
+}
+.compress-status{
+  margin-top:.5rem;font-size:.72rem;
+  padding:.4rem .7rem;border-radius:8px;
+  background:var(--bg);color:var(--muted);
+  display:flex;align-items:center;gap:.4rem;
+}
+.compress-status.success{color:var(--green)}
+.compress-status.compressing{color:var(--orange)}
+.compress-status.error{color:var(--red)}
 
 /* ═══════════════════════════════════════════
-   v1.7.0 — UPVOTE / VALIDASI
-   ═══════════════════════════════════════════ */
-const UPVOTE_KEY = 'laporbencana_upvoted';
-
-/** Check if user already voted for this report */
-function hasVoted(reportId) {
-  const voted = JSON.parse(localStorage.getItem(UPVOTE_KEY) || '[]');
-  return voted.includes(reportId);
-}
-
-/** Record vote locally */
-function recordVote(reportId) {
-  const voted = JSON.parse(localStorage.getItem(UPVOTE_KEY) || '[]');
-  voted.push(reportId);
-  localStorage.setItem(UPVOTE_KEY, JSON.stringify(voted));
-}
-
-/** Handle upvote click */
-async function handleUpvote(reportId, btnEl) {
-  if (hasVoted(reportId)) return;
-
-  // Optimistic UI update
-  const countEl = btnEl.querySelector('.vote-count');
-  const currentCount = parseInt(countEl.textContent, 10) || 0;
-  countEl.textContent = currentCount + 1;
-  btnEl.classList.add('voted');
-  btnEl.disabled = true;
-  btnEl.innerHTML = '👍✓ <span class="vote-count">' + (currentCount + 1) + '</span>';
-
-  try {
-    // Increment upvotes in Supabase
-    const res = await fetch(`${SUPABASE_URL}/rest/v1/reports?id=eq.${reportId}`, {
-      method: 'PATCH',
-      headers: {
-        ...SB_HEADERS,
-        'Content-Type': 'application/json',
-        Prefer: 'return=representation',
-      },
-      body: JSON.stringify({
-        upvotes: currentCount + 1,
-      }),
-    });
-
-    if (!res.ok) {
-      // Rollback UI on failure
-      countEl.textContent = currentCount;
-      btnEl.classList.remove('voted');
-      btnEl.disabled = false;
-      btnEl.innerHTML = '👍 <span class="vote-count">' + currentCount + '</span>';
-      showToast('⚠️', 'Gagal', 'Tidak bisa menyimpan validasi. Coba lagi.');
-      return;
-    }
-
-    recordVote(reportId);
-    console.info('[LaporBencana] Upvote berhasil untuk report:', reportId);
-  } catch (e) {
-    // Rollback on network error
-    countEl.textContent = currentCount;
-    btnEl.classList.remove('voted');
-    btnEl.disabled = false;
-    btnEl.innerHTML = '👍 <span class="vote-count">' + currentCount + '</span>';
-    showToast('⚠️', 'Gagal', 'Koneksi bermasalah. Coba lagi.');
-  }
-}
-
-/* ═══════════════════════════════════════════
-   v1.7.0 — CRISIS CLUSTER DETECTION
+   v1.7.0 — NEW FEATURES
    ═══════════════════════════════════════════ */
 
-/** Haversine distance in meters between two coordinates */
-function haversineDistance(lat1, lng1, lat2, lng2) {
-  const R = 6371000; // Earth radius in meters
-  const toRad = (d) => (d * Math.PI) / 180;
-  const dLat = toRad(lat2 - lat1);
-  const dLng = toRad(lng2 - lng1);
-  const a =
-    Math.sin(dLat / 2) ** 2 +
-    Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLng / 2) ** 2;
-  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+/* ═══ 6. Dark Mode Toggle ═══ */
+.btn-dark-toggle{
+  position:absolute;top:1rem;right:1rem;
+  width:36px;height:36px;border-radius:50%;
+  border:2px solid rgba(255,255,255,.35);
+  background:rgba(255,255,255,.15);
+  cursor:pointer;font-size:1.1rem;
+  display:flex;align-items:center;justify-content:center;
+  transition:background .2s,transform .2s;
+  z-index:2;backdrop-filter:blur(4px);
+}
+.btn-dark-toggle:hover{background:rgba(255,255,255,.3);transform:scale(1.1)}
+
+/* ═══ 6. Dark Mode Theme ═══ */
+body.dark{
+  --bg:#1a1a2e;--card:#16213e;
+  --text:#e0e0e0;--muted:#8892a4;
+  --border:#2a2a4a;
+  --shadow:0 2px 16px rgba(0,0,0,.3);
+}
+body.dark .header{
+  background:linear-gradient(135deg,#1a1a2e,#0f3460);
+}
+body.dark .header::after{background:var(--bg)}
+body.dark .btn-join-telegram{background:var(--card);color:var(--telegram)}
+body.dark .btn-join-telegram:hover{background:var(--telegram);color:#fff}
+body.dark .logo-bar{background:var(--card);border-color:var(--border)}
+body.dark .logo-slot{background:var(--bg);border-color:var(--border)}
+body.dark .logo-item{background:var(--card);border-color:var(--border)}
+body.dark input[type="text"],
+body.dark select,
+body.dark textarea{
+  background-color:var(--bg);color:var(--text);border-color:var(--border);
+}
+body.dark select{
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%238892a4' viewBox='0 0 16 16'%3E%3Cpath d='M1.5 5.5l6.5 6 6.5-6'/%3E%3C/svg%3E");
+}
+body.dark .btn-ghost{background:var(--card);color:var(--text);border-color:var(--border)}
+body.dark .btn-ghost:hover{border-color:var(--orange);color:var(--orange)}
+body.dark .btn-submit{box-shadow:0 4px 14px rgba(255,107,53,.3)}
+body.dark .toast-card,
+body.dark .cooldown-card{background:var(--card);box-shadow:0 20px 50px rgba(0,0,0,.4)}
+body.dark .toast-card p{color:var(--muted)}
+body.dark .cooldown-ring .track{stroke:var(--border)}
+body.dark .cooldown-ring .label{color:var(--text)}
+body.dark .footer-inner{background:rgba(255,107,53,.1);border-color:rgba(255,107,53,.25)}
+body.dark .checkmark{background:var(--bg);border-color:var(--border)}
+body.dark .checkbox-label{color:var(--text)}
+body.dark .upload-zone{border-color:var(--border)}
+body.dark .report-icon{background:var(--bg)}
+body.dark .report-map-btn{background:var(--card);border-color:var(--border);color:var(--text)}
+body.dark .leaflet-tile{filter:brightness(0.7) contrast(1.1) saturate(0.8)}
+
+/* ═══ 4. Map Expansion ═══ */
+.map-wrapper{position:relative}
+.btn-map-expand{
+  position:absolute;top:8px;right:8px;
+  width:32px;height:32px;border-radius:8px;
+  border:1.5px solid var(--border);background:var(--white);
+  cursor:pointer;font-size:1rem;z-index:10;
+  display:flex;align-items:center;justify-content:center;
+  transition:all .2s;box-shadow:0 2px 8px rgba(0,0,0,.12);
+}
+.btn-map-expand:hover{border-color:var(--orange);color:var(--orange)}
+body.dark .btn-map-expand{background:var(--card);border-color:var(--border);color:var(--text)}
+
+.map-wrapper.map-expanded{
+  position:fixed;inset:0;z-index:9997;
+  background:var(--bg);padding:0;
+}
+.map-wrapper.map-expanded #map{
+  width:100%;height:75vh;border-radius:0;border:none;
+  margin-top:0;
+}
+.map-wrapper.map-expanded .btn-map-expand{
+  position:fixed;top:12px;right:12px;z-index:9998;
+  background:var(--orange);color:#fff;border-color:var(--orange);
+  font-size:1.1rem;width:36px;height:36px;
+}
+.map-wrapper.map-expanded::after{
+  content:'✕ Tutup Peta';
+  position:fixed;bottom:0;left:0;right:0;
+  text-align:center;padding:1rem;
+  background:var(--card);
+  border-top:1px solid var(--border);
+  font-size:.85rem;font-weight:600;color:var(--muted);
+  cursor:pointer;z-index:9998;
+}
+@media(min-width:560px){
+  .map-wrapper.map-expanded #map{height:85vh}
 }
 
-/** Detect crisis clusters: reports within 50m of each other OR high upvotes */
-function detectCrisisClusters(reports) {
-  const crisisIds = new Set();
-  const CLUSTER_RADIUS = 50;   // meters
-  const HIGH_UPVOTE    = 3;    // threshold for "high" upvote
-
-  for (let i = 0; i < reports.length; i++) {
-    // High upvote = crisis
-    if ((reports[i].upvotes || 0) >= HIGH_UPVOTE) {
-      crisisIds.add(reports[i].id);
-    }
-
-    // Cluster detection
-    for (let j = i + 1; j < reports.length; j++) {
-      const dist = haversineDistance(
-        reports[i].lat, reports[i].lng,
-        reports[j].lat, reports[j].lng,
-      );
-      if (dist < CLUSTER_RADIUS) {
-        crisisIds.add(reports[i].id);
-        crisisIds.add(reports[j].id);
-      }
-    }
-  }
-
-  return crisisIds;
+/* ═══ 5. Better Spacing ═══ */
+.btn-submit{
+  margin-top:1.75rem;
+  margin-bottom:2.5rem;
 }
 
-/* ═══════════════════════════════════════════
-   v1.7.0 — MAP FULLSCREEN
-   ═══════════════════════════════════════════ */
-let mapExpanded = false;
+/* ═══ 2. Upvote Button ═══ */
+.report-actions{
+  display:flex;align-items:center;gap:.5rem;margin-top:.4rem;
+}
+.btn-upvote{
+  display:inline-flex;align-items:center;gap:.3rem;
+  padding:.3rem .6rem;border-radius:8px;
+  border:1.5px solid var(--border);background:var(--bg);
+  font-size:.72rem;font-weight:600;color:var(--muted);
+  cursor:pointer;transition:all .2s;
+  user-select:none;
+}
+.btn-upvote:hover{border-color:var(--orange);color:var(--orange)}
+.btn-upvote.voted{
+  border-color:var(--orange);color:var(--orange);
+  background:rgba(255,107,53,.1);
+}
+.btn-upvote .vote-count{font-family:'SF Mono',Menlo,monospace}
 
-function setupMapFullscreen() {
-  const btn = document.getElementById('btnMapExpand');
-  const wrapper = document.getElementById('mapWrapper');
-
-  btn.addEventListener('click', () => {
-    mapExpanded = !mapExpanded;
-    if (mapExpanded) {
-      wrapper.classList.add('map-expanded');
-      btn.textContent = '✕';
-      btn.title = 'Tutup Peta';
-      document.body.style.overflow = 'hidden';
-    } else {
-      wrapper.classList.remove('map-expanded');
-      btn.textContent = '⛶';
-      btn.title = 'Perbesar Peta';
-      document.body.style.overflow = '';
-    }
-    // Invalidate map size after transition
-    setTimeout(() => map.invalidateSize(), 300);
-  });
-
-  // Close expanded map when clicking the bottom bar
-  wrapper.addEventListener('click', (e) => {
-    if (mapExpanded && e.target === wrapper.querySelector('::after')) {
-      btn.click();
-    }
-  });
+/* ═══ 3. Highlight Crisis Markers ═══ */
+@keyframes pulse-crisis{
+  0%,100%{transform:scale(1);opacity:1}
+  50%{transform:scale(1.3);opacity:.7}
+}
+.crisis-marker{
+  animation:pulse-crisis 1.2s ease-in-out infinite;
+  filter:drop-shadow(0 0 6px rgba(230,57,70,.6)) !important;
 }
 
-/* ═══════════════════════════════════════════
-   v1.7.0 — DARK MODE
-   ═══════════════════════════════════════════ */
-const DARK_KEY = 'laporbencana_darkmode';
+/* ═══ 7. FAB Refresh ═══ */
+.fab-refresh{
+  position:fixed;bottom:1.5rem;right:1.5rem;
+  width:48px;height:48px;border-radius:50%;
+  border:none;background:var(--orange);color:#fff;
+  font-size:1.2rem;cursor:pointer;z-index:9996;
+  box-shadow:0 4px 16px rgba(255,107,53,.4);
+  display:flex;align-items:center;justify-content:center;
+  transition:transform .2s,box-shadow .2s;
+}
+.fab-refresh:hover{transform:scale(1.1);box-shadow:0 6px 20px rgba(255,107,53,.5)}
+.fab-refresh:active{transform:scale(.95)}
+.fab-refresh.spinning{animation:spin .6s linear}
+body.dark .fab-refresh{background:var(--accent2);box-shadow:0 4px 16px rgba(255,140,90,.4)}
 
-function setupDarkMode() {
-  const btn = document.getElementById('btnDarkToggle');
-  const icon = btn.querySelector('.dark-icon');
+/* ═══ Emergency Numbers (inline in map card) ═══ */
+.emergency-bar{
+  margin-top:.75rem;position:relative;
+}
+.btn-emergency{
+  width:100%;padding:.6rem 1rem;
+  border:1.5px solid var(--red);border-radius:10px;
+  background:rgba(230,57,70,.06);color:var(--red);
+  font-size:.82rem;font-weight:700;
+  cursor:pointer;transition:all .2s;
+  display:flex;align-items:center;justify-content:center;gap:.4rem;
+}
+.btn-emergency:hover{background:var(--red);color:#fff}
+.btn-emergency.active{background:var(--red);color:#fff;border-radius:10px 10px 0 0}
 
-  // Load saved preference
-  const saved = localStorage.getItem(DARK_KEY);
-  if (saved === 'true') {
-    document.body.classList.add('dark');
-    icon.textContent = '☀️';
-  }
-
-  btn.addEventListener('click', () => {
-    const isDark = document.body.classList.toggle('dark');
-    icon.textContent = isDark ? '☀️' : '🌙';
-    localStorage.setItem(DARK_KEY, isDark);
-  });
+.emergency-dropdown{
+  background:var(--card);border-radius:0 0 10px 10px;
+  border:1.5px solid var(--red);border-top:none;
+  overflow:hidden;
+  max-height:0;opacity:0;
+  transition:max-height .25s ease,opacity .2s;
+}
+.emergency-dropdown.show{
+  max-height:300px;opacity:1;
 }
 
-/* ═══════════════════════════════════════════
-   v1.7.0 — FAB REFRESH
-   ═══════════════════════════════════════════ */
-function setupFabRefresh() {
-  const fab = document.getElementById('btnFabRefresh');
-  fab.addEventListener('click', () => {
-    fab.classList.add('spinning');
-    // Local refresh: reload reports + reinit map, bukan full page reload
-    loadReports();
-    setTimeout(() => fab.classList.remove('spinning'), 600);
-  });
+.emergency-item{
+  display:flex;align-items:center;gap:.6rem;
+  padding:.55rem 1rem;
+  text-decoration:none;color:var(--text);
+  transition:background .15s;
+  border-bottom:1px solid var(--border);
+}
+.emergency-item:last-child{border-bottom:none}
+.emergency-item:hover{background:rgba(255,107,53,.06)}
+.emergency-item:active{background:rgba(255,107,53,.12)}
+
+.emergency-icon{font-size:1.1rem;flex-shrink:0;width:24px;text-align:center}
+.emergency-info{font-size:.8rem;line-height:1.3}
+.emergency-info strong{
+  font-family:'SF Mono',Menlo,monospace;
+  font-size:.85rem;color:var(--red);
 }
 
-/* ═══════════════════════════════════════════
-   v1.7.0 — EMERGENCY NUMBERS TAB
-   ═══════════════════════════════════════════ */
-function setupEmergencyTab() {
-  const btn   = document.getElementById('btnEmergency');
-  const panel = document.getElementById('emergencyPanel');
-
-  btn.addEventListener('click', (e) => {
-    e.stopPropagation();
-    const isOpen = panel.classList.toggle('show');
-    btn.classList.toggle('active', isOpen);
-  });
-
-  // Close when clicking outside
-  document.addEventListener('click', (e) => {
-    if (!panel.contains(e.target) && e.target !== btn) {
-      panel.classList.remove('show');
-      btn.classList.remove('active');
-    }
-  });
-
-  // Close when clicking a link (dial a number)
-  panel.querySelectorAll('.emergency-item').forEach((item) => {
-    item.addEventListener('click', () => {
-      panel.classList.remove('show');
-      btn.classList.remove('active');
-    });
-  });
+/* Reset map button — slightly more prominent */
+.btn-reset-map{
+  border-color:var(--muted) !important;
 }
 
-/* ═══════════════════════════════════════════
-   TOAST — Notification System
-   ═══════════════════════════════════════════ */
-function showToast(icon, title, msg) {
-  document.getElementById('toastIcon').textContent = icon;
-  document.getElementById('toastTitle').textContent = title;
-  document.getElementById('toastMsg').textContent   = msg;
-  document.getElementById('toastOverlay').classList.add('show');
-}
-
-function closeToast() {
-  document.getElementById('toastOverlay').classList.remove('show');
-}
-
-/* ═══════════════════════════════════════════
-   INIT
-   ═══════════════════════════════════════════ */
-document.addEventListener('DOMContentLoaded', () => {
-  // Load Telegram config from Supabase
-  loadTelegramConfig();
-
-  // Load existing reports
-  loadReports();
-
-  // Cleanup expired reports (best effort)
-  cleanupExpiredReports();
-
-  // Copyright year (auto-update, from COPYRIGHT.md pattern)
-  const el = document.getElementById('copyright-text');
-  if (el) el.textContent = `© ${new Date().getFullYear()} KingSyah`;
-
-  // Event listeners
-  document.getElementById('btnGps').addEventListener('click', useMyLocation);
-  document.getElementById('btnReset').addEventListener('click', resetForm);
-  document.getElementById('btnSubmit').addEventListener('click', submitReport);
-  document.getElementById('btnRefresh').addEventListener('click', loadReports);
-  document.getElementById('toastClose').addEventListener('click', closeToast);
-  document.getElementById('toastOverlay').addEventListener('click', (e) => {
-    if (e.target === e.currentTarget) closeToast();
-  });
-
-  // Character counter for description
-  setupCharCounter();
-
-  // Media upload (optional photo/video)
-  setupMediaUpload();
-
-  // v1.7.0 features
-  setupDarkMode();
-  setupMapFullscreen();
-  setupFabRefresh();
-  setupEmergencyTab();
-
-  // Show logo bar only if real logos exist
-  const logoBar = document.querySelector('.logo-bar');
-  if (logoBar && logoBar.querySelectorAll('.logo-item').length > 0) {
-    logoBar.classList.add('visible');
-  }
-});
+body.dark .emergency-dropdown{background:var(--card);border-color:var(--red)}
+body.dark .emergency-item:hover{background:rgba(230,57,70,.1)}
+body.dark .btn-emergency{background:rgba(230,57,70,.1);border-color:var(--red)}
+body.dark .btn-emergency:hover,
+body.dark .btn-emergency.active{background:var(--red);color:#fff}
