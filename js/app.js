@@ -1212,33 +1212,30 @@ document.addEventListener('DOMContentLoaded', () => {
     logoBar.classList.add('visible');
   }
 
-  // Auto-refresh reports every 30s (keeps crisis zones & markers up-to-date)
-  let autoRefreshTimer = null;
+  // Auto-refresh saat idle 10 menit (bukan polling aktif)
+  const IDLE_TIMEOUT = 10 * 60 * 1000; // 10 menit
+  let idleTimer = null;
 
-  function startAutoRefresh() {
-    if (autoRefreshTimer) return;
-    autoRefreshTimer = setInterval(() => {
+  function resetIdleTimer() {
+    if (idleTimer) clearTimeout(idleTimer);
+    idleTimer = setTimeout(() => {
       loadReports();
       cleanupExpiredReports();
-    }, 30000); // 30 detik
+    }, IDLE_TIMEOUT);
   }
 
-  function stopAutoRefresh() {
-    if (autoRefreshTimer) {
-      clearInterval(autoRefreshTimer);
-      autoRefreshTimer = null;
-    }
-  }
+  // Reset timer setiap ada interaksi user
+  ['click', 'keydown', 'scroll', 'touchstart', 'mousemove'].forEach(evt => {
+    document.addEventListener(evt, resetIdleTimer, { passive: true });
+  });
+  resetIdleTimer();
 
-  // Pause polling saat tab disembunyikan, resume saat aktif lagi
+  // Refresh saat kembali ke tab (setelah pindah tab / minimize)
   document.addEventListener('visibilitychange', () => {
-    if (document.hidden) {
-      stopAutoRefresh();
-    } else {
-      loadReports();       // immediate refresh saat kembali ke tab
-      startAutoRefresh();
+    if (!document.hidden) {
+      loadReports();
+      cleanupExpiredReports();
+      resetIdleTimer();
     }
   });
-
-  startAutoRefresh();
 });
