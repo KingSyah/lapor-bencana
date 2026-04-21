@@ -713,10 +713,15 @@ body.dark .fab-refresh{background:var(--accent2);box-shadow:0 4px 16px rgba(255,
   font-size:.85rem;color:var(--red);
 }
 
-/* Reset map button — slightly more prominent */
-.btn-reset-map{
-  border-color:var(--muted) !important;
+/* Reset Form — small, unobtrusive, above first card */
+.btn-reset-form{
+  display:block;margin-left:auto;margin-bottom:.5rem;
+  padding:.3rem .7rem;border:none;border-radius:8px;
+  background:transparent;color:var(--muted);
+  font-size:.72rem;font-weight:500;
+  cursor:pointer;transition:color .2s,background .2s;
 }
+.btn-reset-form:hover{color:var(--orange);background:rgba(255,107,53,.06)}
 
 body.dark .emergency-dropdown{background:var(--card);border-color:var(--red)}
 body.dark .emergency-item:hover{background:rgba(230,57,70,.1)}
