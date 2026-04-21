@@ -540,6 +540,23 @@ select{
 }
 .btn-dark-toggle:hover{background:rgba(255,255,255,.3);transform:scale(1.1)}
 
+/* ═══ Trakteer Button ═══ */
+.btn-trakteer{
+  position:absolute;top:1rem;left:1rem;
+  width:36px;height:36px;border-radius:50%;
+  border:2px solid rgba(255,255,255,.35);
+  background:rgba(255,255,255,.15);
+  cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  transition:background .2s,transform .2s;
+  z-index:2;backdrop-filter:blur(4px);
+  text-decoration:none;
+}
+.btn-trakteer img{width:18px;height:18px;object-fit:contain;display:block;pointer-events:none}
+.btn-trakteer:hover{background:rgba(255,255,255,.3);transform:scale(1.1)}
+body.dark .btn-trakteer{border-color:rgba(255,255,255,.2);background:rgba(255,255,255,.08)}
+body.dark .btn-trakteer:hover{background:rgba(255,255,255,.15)}
+
 /* ═══ 6. Dark Mode Theme ═══ */
 body.dark{
   --bg:#1a1a2e;--card:#16213e;
