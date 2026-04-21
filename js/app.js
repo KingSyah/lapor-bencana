@@ -1058,20 +1058,20 @@ function setupFabRefresh() {
    v1.7.0 — EMERGENCY NUMBERS TAB
    ═══════════════════════════════════════════ */
 function setupEmergencyTab() {
-  const trigger = document.getElementById('emergencyTrigger');
-  const panel   = document.getElementById('emergencyPanel');
+  const btn   = document.getElementById('btnEmergency');
+  const panel = document.getElementById('emergencyPanel');
 
-  trigger.addEventListener('click', (e) => {
+  btn.addEventListener('click', (e) => {
     e.stopPropagation();
     const isOpen = panel.classList.toggle('show');
-    trigger.classList.toggle('active', isOpen);
+    btn.classList.toggle('active', isOpen);
   });
 
   // Close when clicking outside
   document.addEventListener('click', (e) => {
-    if (!panel.contains(e.target) && e.target !== trigger) {
+    if (!panel.contains(e.target) && e.target !== btn) {
       panel.classList.remove('show');
-      trigger.classList.remove('active');
+      btn.classList.remove('active');
     }
   });
 
@@ -1079,7 +1079,7 @@ function setupEmergencyTab() {
   panel.querySelectorAll('.emergency-item').forEach((item) => {
     item.addEventListener('click', () => {
       panel.classList.remove('show');
-      trigger.classList.remove('active');
+      btn.classList.remove('active');
     });
   });
 }
