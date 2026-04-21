@@ -1125,19 +1125,6 @@ function setupDarkMode() {
 }
 
 /* ═══════════════════════════════════════════
-   v1.7.0 — FAB REFRESH
-   ═══════════════════════════════════════════ */
-function setupFabRefresh() {
-  const fab = document.getElementById('btnFabRefresh');
-  fab.addEventListener('click', () => {
-    fab.classList.add('spinning');
-    // Local refresh: reload reports + reinit map, bukan full page reload
-    loadReports();
-    setTimeout(() => fab.classList.remove('spinning'), 600);
-  });
-}
-
-/* ═══════════════════════════════════════════
    v1.7.0 — EMERGENCY NUMBERS TAB
    ═══════════════════════════════════════════ */
 function setupEmergencyTab() {
@@ -1217,7 +1204,6 @@ document.addEventListener('DOMContentLoaded', () => {
   // v1.7.0 features
   setupDarkMode();
   setupMapFullscreen();
-  setupFabRefresh();
   setupEmergencyTab();
 
   // Show logo bar only if real logos exist
