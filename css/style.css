@@ -167,7 +167,8 @@ label{display:block;font-size:.8rem;font-weight:600;color:var(--muted);margin-bo
 
 input[type="text"],select,textarea{
   width:100%;padding:.7rem .85rem;border:1.5px solid var(--border);
-  border-radius:10px;font-size:.95rem;background:var(--bg);
+  border-radius:10px;font-size:.95rem;
+  background-color:var(--bg);
   color:var(--text);transition:border .2s,box-shadow .2s;outline:none;
   font-family:inherit;
 }
@@ -177,9 +178,12 @@ input:focus,select:focus,textarea:focus{
 textarea{resize:vertical;min-height:90px}
 
 select{
-  appearance:none;
+  appearance:none;-webkit-appearance:none;
+  padding-right:2.2rem;
   background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%236e6e73' viewBox='0 0 16 16'%3E%3Cpath d='M1.5 5.5l6.5 6 6.5-6'/%3E%3C/svg%3E");
-  background-repeat:no-repeat;background-position:right .85rem center;
+  background-repeat:no-repeat;
+  background-position:right .85rem center;
+  background-size:12px 12px;
 }
 .form-group{margin-bottom:1rem}
 
@@ -555,7 +559,7 @@ body.dark .logo-item{background:var(--card);border-color:var(--border)}
 body.dark input[type="text"],
 body.dark select,
 body.dark textarea{
-  background:var(--bg);color:var(--text);border-color:var(--border);
+  background-color:var(--bg);color:var(--text);border-color:var(--border);
 }
 body.dark select{
   background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%238892a4' viewBox='0 0 16 16'%3E%3Cpath d='M1.5 5.5l6.5 6 6.5-6'/%3E%3C/svg%3E");
@@ -665,41 +669,30 @@ body.dark .btn-map-expand{background:var(--card);border-color:var(--border);colo
 .fab-refresh.spinning{animation:spin .6s linear}
 body.dark .fab-refresh{background:var(--accent2);box-shadow:0 4px 16px rgba(255,140,90,.4)}
 
-/* ═══ Emergency Numbers Tab ═══ */
-.emergency-tab{
-  position:fixed;bottom:1.5rem;left:1.5rem;z-index:9996;
+/* ═══ Emergency Numbers (inline in map card) ═══ */
+.emergency-bar{
+  margin-top:.75rem;position:relative;
 }
-.emergency-trigger{
-  width:44px;height:44px;border-radius:50%;
-  border:none;background:var(--red);color:#fff;
-  font-size:1.1rem;cursor:pointer;
-  box-shadow:0 3px 12px rgba(230,57,70,.4);
-  display:flex;align-items:center;justify-content:center;
-  transition:transform .2s;
+.btn-emergency{
+  width:100%;padding:.6rem 1rem;
+  border:1.5px solid var(--red);border-radius:10px;
+  background:rgba(230,57,70,.06);color:var(--red);
+  font-size:.82rem;font-weight:700;
+  cursor:pointer;transition:all .2s;
+  display:flex;align-items:center;justify-content:center;gap:.4rem;
 }
-.emergency-trigger:hover{transform:scale(1.1)}
-.emergency-trigger.active{background:#b71c1c}
+.btn-emergency:hover{background:var(--red);color:#fff}
+.btn-emergency.active{background:var(--red);color:#fff;border-radius:10px 10px 0 0}
 
-.emergency-panel{
-  position:absolute;bottom:56px;left:0;
-  background:var(--card);border-radius:14px;
-  box-shadow:0 8px 30px rgba(0,0,0,.18);
-  border:1px solid var(--border);
-  width:240px;overflow:hidden;
-  opacity:0;transform:translateY(8px) scale(.95);
-  pointer-events:none;
-  transition:opacity .2s,transform .2s;
+.emergency-dropdown{
+  background:var(--card);border-radius:0 0 10px 10px;
+  border:1.5px solid var(--red);border-top:none;
+  overflow:hidden;
+  max-height:0;opacity:0;
+  transition:max-height .25s ease,opacity .2s;
 }
-.emergency-panel.show{
-  opacity:1;transform:translateY(0) scale(1);
-  pointer-events:auto;
-}
-
-.emergency-header{
-  font-size:.72rem;font-weight:700;text-transform:uppercase;
-  letter-spacing:1px;color:var(--muted);
-  padding:.7rem 1rem .5rem;
-  border-bottom:1px solid var(--border);
+.emergency-dropdown.show{
+  max-height:300px;opacity:1;
 }
 
 .emergency-item{
@@ -720,6 +713,13 @@ body.dark .fab-refresh{background:var(--accent2);box-shadow:0 4px 16px rgba(255,
   font-size:.85rem;color:var(--red);
 }
 
-body.dark .emergency-panel{background:var(--card);border-color:var(--border);box-shadow:0 8px 30px rgba(0,0,0,.4)}
-body.dark .emergency-item:hover{background:rgba(255,107,53,.1)}
-body.dark .emergency-trigger{box-shadow:0 3px 12px rgba(230,57,70,.5)}
+/* Reset map button — slightly more prominent */
+.btn-reset-map{
+  border-color:var(--muted) !important;
+}
+
+body.dark .emergency-dropdown{background:var(--card);border-color:var(--red)}
+body.dark .emergency-item:hover{background:rgba(230,57,70,.1)}
+body.dark .btn-emergency{background:rgba(230,57,70,.1);border-color:var(--red)}
+body.dark .btn-emergency:hover,
+body.dark .btn-emergency.active{background:var(--red);color:#fff}
