@@ -1117,7 +1117,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Event listeners
   document.getElementById('btnGps').addEventListener('click', useMyLocation);
-  document.getElementById('btnReset').addEventListener('click', resetMap);
+  document.getElementById('btnReset').addEventListener('click', resetForm);
   document.getElementById('btnSubmit').addEventListener('click', submitReport);
   document.getElementById('btnRefresh').addEventListener('click', loadReports);
   document.getElementById('toastClose').addEventListener('click', closeToast);
