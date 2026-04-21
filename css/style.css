@@ -562,6 +562,10 @@ body.dark .btn-trakteer{border-color:rgba(255,255,255,.2);background:rgba(255,25
 body.dark .btn-trakteer:hover{background:rgba(255,255,255,.15)}
 body.dark .btn-trakteer .kopi-ring{border-color:rgba(255,255,255,.15)}
 
+@media(min-width:560px){
+  .btn-trakteer{position:fixed;top:1rem;left:1rem}
+}
+
 @keyframes kopi-float{0%,100%{transform:translateY(0)}50%{transform:translateY(-3px)}}
 @keyframes kopi-ripple{0%{transform:scale(1);opacity:.5}100%{transform:scale(1.8);opacity:0}}
 @keyframes kopi-wobble{0%,60%{transform:rotate(0deg)}63%{transform:rotate(-10deg)}66%{transform:rotate(8deg)}69%{transform:rotate(-5deg)}72%{transform:rotate(3deg)}75%,100%{transform:rotate(0deg)}}
