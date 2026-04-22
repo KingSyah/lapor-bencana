@@ -740,3 +740,113 @@ body.dark .emergency-item:hover{background:rgba(230,57,70,.1)}
 body.dark .btn-emergency{background:rgba(230,57,70,.1);border-color:var(--red)}
 body.dark .btn-emergency:hover,
 body.dark .btn-emergency.active{background:var(--red);color:#fff}
+
+/* ═══ Disclaimer Overlay ═══ */
+.disclaimer-overlay{
+  position:fixed;inset:0;z-index:10000;
+  display:flex;align-items:center;justify-content:center;
+  background:rgba(0,0,0,.55);
+  backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
+  opacity:0;pointer-events:none;
+  transition:opacity .3s ease;
+}
+.disclaimer-overlay.visible{opacity:1;pointer-events:auto}
+
+.disclaimer-card{
+  background:var(--card);border-radius:16px;
+  width:92%;max-width:520px;max-height:90vh;
+  display:flex;flex-direction:column;
+  box-shadow:0 20px 60px rgba(0,0,0,.25);
+  overflow:hidden;
+  animation:disclaimer-pop .35s ease;
+}
+@keyframes disclaimer-pop{
+  from{transform:translateY(30px) scale(.96);opacity:0}
+  to{transform:translateY(0) scale(1);opacity:1}
+}
+
+.disclaimer-header{
+  padding:20px 24px 12px;text-align:center;
+  border-bottom:1px solid var(--border);
+}
+.disclaimer-icon{font-size:28px;display:block;margin-bottom:6px}
+.disclaimer-header h2{
+  font-size:1.1rem;font-weight:700;color:var(--text);line-height:1.3;
+}
+.disclaimer-header h2 span{font-weight:500;font-size:.85rem;color:var(--muted)}
+
+.disclaimer-body{
+  padding:16px 24px;overflow-y:auto;flex:1;
+}
+.disclaimer-body>p{
+  font-size:.88rem;color:var(--muted);margin-bottom:14px;line-height:1.55;
+}
+
+.disclaimer-point{
+  display:flex;gap:10px;margin-bottom:14px;
+}
+.point-num{
+  flex-shrink:0;width:22px;height:22px;
+  display:flex;align-items:center;justify-content:center;
+  background:var(--orange);color:#fff;
+  border-radius:50%;font-size:.75rem;font-weight:700;
+  margin-top:1px;
+}
+.disclaimer-point>div{flex:1;min-width:0}
+.disclaimer-point strong{
+  display:block;font-size:.88rem;color:var(--text);margin-bottom:3px;
+}
+.disclaimer-point p{
+  font-size:.82rem;color:var(--muted);line-height:1.5;margin:0;
+}
+.disclaimer-point a{color:var(--orange);text-decoration:none;font-weight:600}
+.disclaimer-point a:hover{text-decoration:underline}
+
+.disclaimer-footer{
+  padding:16px 24px 20px;
+  border-top:1px solid var(--border);
+  display:flex;flex-direction:column;gap:12px;
+}
+
+/* Reuse checkbox style from upload compress */
+.disclaimer-check{
+  display:flex;align-items:flex-start;gap:10px;cursor:pointer;
+  font-size:.82rem;color:var(--muted);line-height:1.45;
+}
+.disclaimer-check input{display:none}
+.disclaimer-check .checkmark{
+  flex-shrink:0;width:20px;height:20px;
+  border:2px solid var(--border);border-radius:5px;
+  display:flex;align-items:center;justify-content:center;
+  transition:all .2s;margin-top:1px;
+}
+.disclaimer-check input:checked+.checkmark{
+  background:var(--orange);border-color:var(--orange);
+}
+.disclaimer-check input:checked+.checkmark::after{
+  content:'✓';color:#fff;font-size:12px;font-weight:700;
+}
+
+.btn-disclaimer-accept{
+  width:100%;padding:13px;
+  border:none;border-radius:12px;
+  background:var(--orange);color:#fff;
+  font-size:.95rem;font-weight:700;
+  cursor:pointer;transition:all .2s;
+}
+.btn-disclaimer-accept:disabled{
+  background:var(--border);color:var(--muted);cursor:not-allowed;
+}
+.btn-disclaimer-accept:not(:disabled):hover{
+  background:#e55a2b;transform:translateY(-1px);
+}
+
+/* Dark mode */
+body.dark .disclaimer-overlay{background:rgba(0,0,0,.7)}
+body.dark .disclaimer-card{background:#1c1c1e}
+body.dark .disclaimer-header{border-color:#333}
+body.dark .disclaimer-footer{border-color:#333}
+body.dark .disclaimer-header h2{color:var(--white)}
+body.dark .point-num{background:var(--red)}
+body.dark .disclaimer-point strong{color:var(--white)}
+body.dark .disclaimer-check{color:#aaa}
