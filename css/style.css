@@ -609,6 +609,8 @@ body.dark .checkbox-label{color:var(--text)}
 body.dark .upload-zone{border-color:var(--border)}
 body.dark .report-icon{background:var(--bg)}
 body.dark .report-map-btn{background:var(--card);border-color:var(--border);color:var(--text)}
+body.dark .report-map-btn:hover{background:#ff6b35;border-color:#ff6b35;color:#fff}
+body.dark .report-map-btn:hover::after{background:#333;color:#e0e0e0}
 body.dark .leaflet-tile{filter:brightness(0.7) contrast(1.1) saturate(0.8)}
 
 /* ═══ 4. Map Expansion ═══ */
