@@ -353,14 +353,15 @@ select{
 .report-meta span{display:flex;align-items:center;gap:.2rem}
 
 .report-map-btn{
-  align-self:center;flex-shrink:0;
+  align-self:center;flex-shrink:0;position:relative;
   width:32px;height:32px;border-radius:8px;
   border:1.5px solid var(--border);background:var(--white);
   cursor:pointer;font-size:.85rem;
   display:flex;align-items:center;justify-content:center;
   transition:border-color .2s;
 }
-.report-map-btn:hover{border-color:var(--orange)}
+.report-map-btn:hover{border-color:var(--orange);background:var(--orange);color:#fff;transform:scale(1.15)}
+.report-map-btn:hover::after{content:'Klik untuk melihat lokasi';position:absolute;right:110%;top:50%;transform:translateY(-50%);white-space:nowrap;background:var(--text);color:var(--white);font-size:.7rem;padding:4px 8px;border-radius:6px;pointer-events:none}
 
 .report-empty{
   text-align:center;padding:1.5rem 0;
