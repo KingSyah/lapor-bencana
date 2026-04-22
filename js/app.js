@@ -241,7 +241,7 @@ async function loadReports() {
               </button>
             </div>
           </div>
-          <button class="report-map-btn" onclick="flyToReport(${r.lat},${r.lng})" title="Lihat di peta">📍</button>
+          <button class="report-map-btn" onclick="flyToReport(${r.lat},${r.lng})" title="Klik untuk melihat lokasi di peta">📍</button>
         </div>`;
     }).join('');
 
@@ -308,14 +308,21 @@ async function loadReports() {
 
 /** Fly map to a report location */
 function flyToReport(lat, lng) {
-  map.flyTo([lat, lng], 16, { duration: 0.8 });
-  // Open popup of nearest marker
-  reportMarkers.eachLayer((layer) => {
-    const ll = layer.getLatLng();
-    if (Math.abs(ll.lat - lat) < 0.0001 && Math.abs(ll.lng - lng) < 0.0001) {
-      layer.openPopup();
-    }
-  });
+  const mapWrapper = document.getElementById('mapWrapper');
+  if (mapWrapper) {
+    mapWrapper.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
+  // Delay flyTo slightly so scroll animation starts first
+  setTimeout(() => {
+    map.flyTo([lat, lng], 16, { duration: 0.8 });
+    // Open popup of nearest marker
+    reportMarkers.eachLayer((layer) => {
+      const ll = layer.getLatLng();
+      if (Math.abs(ll.lat - lat) < 0.0001 && Math.abs(ll.lng - lng) < 0.0001) {
+        layer.openPopup();
+      }
+    });
+  }, 400);
 }
 
 /** Load location history from Supabase (max 7 hari terakhir saja) */
