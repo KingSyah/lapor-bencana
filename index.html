@@ -29,6 +29,59 @@
 </head>
 <body>
 
+  <!-- ═══ Disclaimer Overlay ═══ -->
+  <div class="disclaimer-overlay" id="disclaimerOverlay">
+    <div class="disclaimer-card">
+      <div class="disclaimer-header">
+        <span class="disclaimer-icon">⚠️</span>
+        <h2>PENGUMUMAN & PENAFIAN <span>(DISCLAIMER)</span></h2>
+      </div>
+      <div class="disclaimer-body">
+        <p>Selamat datang di aplikasi web <strong>Lapor Bencana</strong>. Sebelum menggunakan layanan ini, harap membaca dan memahami poin-poin berikut:</p>
+
+        <div class="disclaimer-point">
+          <span class="point-num">1.</span>
+          <div>
+            <strong>Status Kepemilikan</strong>
+            <p>Web apps ini dibangun dan dikelola secara swadaya sebagai proyek komunitas/pribadi. Platform ini <strong>BUKAN</strong> saluran pelaporan resmi milik Pemerintah Republik Indonesia, Badan Nasional Penanggulangan Bencana (BNPB), Badan Penanggulangan Bencana Daerah (BPBD), maupun instansi terkait lainnya.</p>
+          </div>
+        </div>
+
+        <div class="disclaimer-point">
+          <span class="point-num">2.</span>
+          <div>
+            <strong>Kondisi Darurat</strong>
+            <p>Pengguna sangat diwajibkan untuk mengutamakan keselamatan diri dan orang sekitar. Jika membutuhkan pertolongan mendesak, evakuasi medis, atau tindakan penyelamatan, segera hubungi otoritas berwenang atau layanan <strong>Call Center Darurat</strong> (seperti <a href="tel:112">112</a>, <a href="tel:115">115</a>, atau <a href="tel:119">119</a>). Jangan menunggu bantuan hanya dengan mengisi laporan di situs ini.</p>
+          </div>
+        </div>
+
+        <div class="disclaimer-point">
+          <span class="point-num">3.</span>
+          <div>
+            <strong>Batasan Tanggung Jawab</strong>
+            <p>Kami menyediakan platform ini "sebagaimana adanya" untuk tujuan saling berbagi informasi antarwarga. Pengembang tidak bertanggung jawab atas keterlambatan penanganan bencana, keakuratan data yang dilaporkan oleh pengguna lain, maupun kerugian materiil dan imateriil yang timbul akibat situasi kebencanaan.</p>
+          </div>
+        </div>
+
+        <div class="disclaimer-point">
+          <span class="point-num">4.</span>
+          <div>
+            <strong>Penggunaan Data</strong>
+            <p>Informasi yang Anda laporkan di sini dapat dilihat oleh publik. Harap bijak dalam membagikan informasi pribadi dan pastikan laporan yang Anda buat sesuai dengan fakta di lapangan untuk menghindari misinformasi (hoaks).</p>
+          </div>
+        </div>
+      </div>
+      <div class="disclaimer-footer">
+        <label class="disclaimer-check" for="disclaimerAck">
+          <input type="checkbox" id="disclaimerAck">
+          <span class="checkmark"></span>
+          <span>Saya telah membaca, memahami, dan menyetujui pernyataan di atas.</span>
+        </label>
+        <button class="btn-disclaimer-accept" id="btnDisclaimerAccept" disabled>Setuju & Lanjutkan</button>
+      </div>
+    </div>
+  </div>
+
   <!-- ═══ Header ═══ -->
   <header class="header">
     <a href="https://trakteer.id/KingSyah/tip?open=true" target="_blank" rel="noopener noreferrer"
