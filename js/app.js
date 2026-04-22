@@ -1087,7 +1087,10 @@ function setupMapFullscreen() {
       wrapper.classList.remove('map-expanded');
       btn.textContent = '⛶';
       btn.title = 'Perbesar Peta';
-      document.body.style.overflow = '';
+      // Only reset overflow if disclaimer is not showing
+      if (!document.getElementById('disclaimerOverlay')?.classList.contains('visible')) {
+        document.body.style.overflow = '';
+      }
     }
     // Invalidate map size after transition
     setTimeout(() => map.invalidateSize(), 300);
@@ -1172,6 +1175,29 @@ function closeToast() {
    INIT
    ═══════════════════════════════════════════ */
 document.addEventListener('DOMContentLoaded', () => {
+  // ═══ Disclaimer Agreement ═══
+  const DISCLAIMER_KEY = 'laporbencana_disclaimer_agreed';
+  const overlay = document.getElementById('disclaimerOverlay');
+  const ackBox  = document.getElementById('disclaimerAck');
+  const acceptBtn = document.getElementById('btnDisclaimerAccept');
+
+  if (!localStorage.getItem(DISCLAIMER_KEY) && overlay) {
+    // Show disclaimer — block interaction with the rest of the app
+    overlay.classList.add('visible');
+    document.body.style.overflow = 'hidden';
+
+    ackBox.addEventListener('change', () => {
+      acceptBtn.disabled = !ackBox.checked;
+    });
+
+    acceptBtn.addEventListener('click', () => {
+      if (!ackBox.checked) return;
+      localStorage.setItem(DISCLAIMER_KEY, '1');
+      overlay.classList.remove('visible');
+      document.body.style.overflow = '';
+    });
+  }
+
   // Load Telegram config from Supabase
   loadTelegramConfig();
 
