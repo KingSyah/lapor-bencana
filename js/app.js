@@ -391,12 +391,12 @@ function getTypeEmoji(type) {
 function formatTimeAgo(isoString) {
   const diff = Date.now() - new Date(isoString).getTime();
   const mins = Math.floor(diff / 60000);
-  if (mins < 1)  return 'baru saja';
-  if (mins < 60) return `${mins}m lalu`;
+  if (mins < 1)   return 'baru saja';
+  if (mins < 60)  return `${mins}m lalu`;
   const hours = Math.floor(mins / 60);
-  if (hours < 24) return `${hours}j lalu`;
+  if (hours < 24)  return `${hours}j lalu`;
   const days = Math.floor(hours / 24);
-  if (days < 7) return `${days}h lalu`;
+  if (days < 7)   return `${days} hari lalu`;
   return new Date(isoString).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' });
 }
 
